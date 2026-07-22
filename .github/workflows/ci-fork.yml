@@ -1,0 +1,89 @@
+name: CI Fork
+
+# Fork-backed Foundry suites. Clearly separated from the deterministic baseline
+# so public-RPC flakiness cannot block required PR checks.
+# Uses a public Ethereum RPC — no production secrets.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekday mornings UTC — smoke the fork suite without gating PRs.
+    - cron: "0 6 * * 1-5"
+  # Intentionally not on pull_request: fork suites need archive RPC history at the
+  # pinned block. Provide FOUNDRY_ETH_RPC_URL (repo variable, not a secret) when
+  # running manually or on the schedule. Required PR protection stays on `baseline`.
+
+concurrency:
+  group: ci-fork-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  fork:
+    name: fork
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # Archive RPC availability varies; keep the job visible when dispatched
+    # without making it a required status check (see docs/CI.md).
+    continue-on-error: true
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Require an archive-capable RPC
+        env:
+          FOUNDRY_ETH_RPC_URL: ${{ vars.FOUNDRY_ETH_RPC_URL }}
+        run: |
+          if [ -z "${FOUNDRY_ETH_RPC_URL}" ]; then
+            echo "::notice::Set repository variable FOUNDRY_ETH_RPC_URL to an archive-capable Ethereum RPC before expecting fork suites to pass."
+            echo "Skipping fork tests (no archive RPC configured)."
+            exit 0
+          fi
+
+      - name: Set up Node.js
+        if: ${{ vars.FOUNDRY_ETH_RPC_URL != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Read pinned Foundry version
+        if: ${{ vars.FOUNDRY_ETH_RPC_URL != '' }}
+        id: foundry
+        run: echo "version=$(tr -d '[:space:]' < .foundry-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Install Foundry
+        if: ${{ vars.FOUNDRY_ETH_RPC_URL != '' }}
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ steps.foundry.outputs.version }}
+
+      - name: Install npm dependencies
+        if: ${{ vars.FOUNDRY_ETH_RPC_URL != '' }}
+        run: npm install
+
+      - name: Build contracts (default profile)
+        if: ${{ vars.FOUNDRY_ETH_RPC_URL != '' }}
+        run: npm run build:contracts
+
+      - name: Run fork Foundry tests (archive RPC)
+        if: ${{ vars.FOUNDRY_ETH_RPC_URL != '' }}
+        env:
+          FOUNDRY_ETH_RPC_URL: ${{ vars.FOUNDRY_ETH_RPC_URL }}
+        run: node scripts/test-contracts-fork.mjs
+
+      - name: Fork summary
+        if: always()
+        run: |
+          {
+            echo "## Fork CI"
+            echo ""
+            echo "Manual/scheduled only. Uses \`vars.FOUNDRY_ETH_RPC_URL\` (archive RPC),"
+            echo "not production secrets, and is **not** a required status check."
+            echo "Required PR protection stays on the \`baseline\` job in \`CI\`."
+          } >> "$GITHUB_STEP_SUMMARY"

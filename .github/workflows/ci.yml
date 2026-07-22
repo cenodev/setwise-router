@@ -1,0 +1,99 @@
+name: CI
+
+# Deterministic baseline checks for every pull request.
+# No production secrets. Fork-backed Foundry suites run in ci-fork.yml.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    name: baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Read pinned Foundry version
+        id: foundry
+        run: echo "version=$(tr -d '[:space:]' < .foundry-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ steps.foundry.outputs.version }}
+
+      - name: Show toolchain versions
+        run: |
+          node --version
+          npm --version
+          forge --version
+          cast --version
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Lint
+        run: npm run lint && npm run lint:services
+
+      - name: Format
+        run: npm run format
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests (workspace + services)
+        run: npm test && npm run test:services
+
+      - name: Build config registry outputs
+        run: npm run build:config
+
+      - name: Build services
+        run: npm run build:services
+
+      - name: Build contracts (default) and gate zRouter bytecode
+        run: |
+          npm run build:contracts
+          npm run check:bytecode -- --artifacts-only --only zRouter
+
+      - name: Build contracts (zquoter) and gate zQuoter bytecode
+        run: |
+          npm run build:contracts:zquoter
+          npm run check:bytecode -- --artifacts-only --only zQuoter
+
+      - name: Foundry offline tests (secret-free)
+        run: npm run test:contracts
+
+      - name: CI summary
+        if: always()
+        run: |
+          {
+            echo "## Baseline CI"
+            echo ""
+            echo "Deterministic checks: lint, format, typecheck, unit tests,"
+            echo "contract builds (default + zquoter), EIP-170 bytecode gate,"
+            echo "and secret-free Foundry tests."
+            echo ""
+            echo "Fork suites are intentionally separate — see \`ci-fork\`."
+          } >> "$GITHUB_STEP_SUMMARY"
