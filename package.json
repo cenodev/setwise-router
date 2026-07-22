@@ -5,12 +5,25 @@
   "description": "Setwise Router — ZFi baseline import and multi-chain Setwise routing program",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
+  "workspaces": [
+    "services/quote",
+    "app"
+  ],
   "scripts": {
-    "test": "node --test test/provenance.test.js",
+    "build": "npm run build:contracts && npm run build:services",
+    "build:contracts": "node scripts/build-zfi-baseline.mjs",
+    "build:services": "npm run build --workspace=@setwise-router/app",
+    "test": "node --test test/*.test.js",
+    "test:contracts": "node scripts/build-zfi-baseline.mjs",
+    "test:services": "npm run test --workspace=@setwise-router/quote",
     "lint": "node scripts/syntax-check.mjs",
+    "lint:services": "npm run lint --workspace=@setwise-router/quote",
     "typecheck": "node scripts/syntax-check.mjs",
-    "build": "node scripts/build-zfi-baseline.mjs"
+    "format": "node scripts/format-check.mjs",
+    "format:fix": "node scripts/format-check.mjs --fix",
+    "clean": "node scripts/clean.mjs",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build"
   }
 }

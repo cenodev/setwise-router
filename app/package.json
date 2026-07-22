@@ -1,0 +1,15 @@
+{
+  "name": "@setwise-router/app",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Setwise Router frontend",
+  "type": "module",
+  "scripts": {
+    "build": "echo 'app build not yet configured' && exit 0",
+    "test": "echo 'no app tests yet' && exit 0",
+    "lint": "echo 'no app lint yet' && exit 0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
