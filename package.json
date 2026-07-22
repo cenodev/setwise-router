@@ -13,7 +13,8 @@
   ],
   "scripts": {
     "test": "node --test test/*.test.js",
-    "build": "npm run build:contracts && npm run build:services",
+    "build": "npm run build:config && npm run build:contracts && npm run build:services",
+    "build:config": "node scripts/build-config.mjs",
     "build:contracts": "node scripts/build-zfi-baseline.mjs",
     "build:services": "npm run build --workspace=@setwise-router/app",
     "test:contracts": "node scripts/build-zfi-baseline.mjs",
