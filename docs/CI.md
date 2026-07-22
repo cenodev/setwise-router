@@ -17,7 +17,7 @@ Neither workflow reads production secrets. Optional repository **variables**
 | Variable | Purpose | Default |
 | --- | --- | --- |
 | `FOUNDRY_VERSION` | Override for `foundry-rs/foundry-toolchain` (normally unused) | [`.foundry-version`](../.foundry-version) (`v1.7.1`) |
-| `FOUNDRY_ETH_RPC_URL` | Public/archive RPC for the fork workflow only | `https://ethereum.publicnode.com` |
+| `FOUNDRY_ETH_RPC_URL` | Public/archive RPC for the fork workflow only | `https://1rpc.io/eth` |
 
 ## What `baseline` runs
 
@@ -32,7 +32,7 @@ Neither workflow reads production secrets. Optional repository **variables**
 9. `npm run build:services`
 10. Default-profile `forge build` + EIP-170 gate for **zRouter**
 11. `zquoter`-profile `forge build` + EIP-170 gate for **zQuoter** (soft headroom fails before the hard 24,576-byte limit)
-12. Secret-free Foundry unit tests (`npm run test:contracts`) — temporary foundry config **without** `eth_rpc_url`, matching `test/{zSwap,ShareBurner,CollectorVault}.t.sol`
+12. Secret-free Foundry unit tests (`npm run test:contracts`) — temporary foundry config **without** `eth_rpc_url` for `test/{zSwap,ShareBurner,CollectorVault}.t.sol`, plus `contracts/` Setwise data-type tests
 
 ## What `fork` runs
 

@@ -15,7 +15,8 @@ const zfi = join(root, "zFi-main");
 const rpc =
   process.env.FOUNDRY_ETH_RPC_URL ||
   process.env.ETH_RPC_URL ||
-  "https://ethereum.publicnode.com";
+  // Prefer 1rpc (also used by upstream zFi-main). publicnode archive now requires a token.
+  "https://1rpc.io/eth";
 
 const forge = resolveForge();
 if (!forge) {

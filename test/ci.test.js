@@ -35,7 +35,7 @@ test("CI workflows exist and pin action majors", () => {
   assert.match(fork, /name:\s*fork/);
   assert.match(fork, /continue-on-error:\s*true/);
   assert.match(fork, /test-contracts-fork\.mjs/);
-  assert.match(fork, /ethereum\.publicnode\.com/);
+  assert.match(fork, /1rpc\.io\/eth/);
 });
 
 test("CI workflows require no production secrets", () => {

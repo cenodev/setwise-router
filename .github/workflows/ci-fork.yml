@@ -63,7 +63,7 @@ jobs:
       - name: Run fork Foundry tests (public RPC)
         env:
           # Override only with a non-secret public/archive URL if desired.
-          FOUNDRY_ETH_RPC_URL: ${{ vars.FOUNDRY_ETH_RPC_URL || 'https://ethereum.publicnode.com' }}
+          FOUNDRY_ETH_RPC_URL: ${{ vars.FOUNDRY_ETH_RPC_URL || 'https://1rpc.io/eth' }}
         run: node scripts/test-contracts-fork.mjs
 
       - name: Fork summary
