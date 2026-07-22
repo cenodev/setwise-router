@@ -1,0 +1,42 @@
+{
+  "apiVersion": "v1",
+  "requestId": "req_indicative_01",
+  "chainId": 8453,
+  "mode": "exact-input",
+  "kind": "indicative",
+  "selectedSourceId": "zfi",
+  "sources": [
+    {
+      "source": {
+        "id": "zfi",
+        "type": "zfi",
+        "displayName": "ZFi"
+      },
+      "status": "available",
+      "quote": {
+        "kind": "indicative",
+        "amounts": {
+          "input": "1000000",
+          "output": "2500000",
+          "limit": "2487500"
+        },
+        "gas": {
+          "estimatedUnits": "180000",
+          "estimatedCost": "24000000000000"
+        },
+        "fees": [],
+        "approvalTarget": null,
+        "expiresAt": null
+      },
+      "evidence": [
+        {
+          "kind": "onchain",
+          "observedAt": "2026-07-22T20:00:00.000Z",
+          "reference": "base:123456",
+          "blockNumber": "123456"
+        }
+      ]
+    }
+  ],
+  "transaction": null
+}

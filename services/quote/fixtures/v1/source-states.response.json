@@ -1,0 +1,94 @@
+{
+  "apiVersion": "v1",
+  "requestId": "req_source_states_01",
+  "chainId": 8453,
+  "mode": "exact-input",
+  "kind": "indicative",
+  "selectedSourceId": "zfi",
+  "sources": [
+    {
+      "source": { "id": "zfi", "type": "zfi", "displayName": "ZFi" },
+      "status": "available",
+      "quote": {
+        "kind": "indicative",
+        "amounts": { "input": "1000000", "output": "2500000", "limit": "2487500" },
+        "gas": { "estimatedUnits": "180000", "estimatedCost": "24000000000000" },
+        "fees": [],
+        "approvalTarget": null,
+        "expiresAt": null
+      },
+      "evidence": [
+        {
+          "kind": "onchain",
+          "observedAt": "2026-07-22T20:00:00.000Z",
+          "reference": "base:123456",
+          "blockNumber": "123456"
+        }
+      ]
+    },
+    {
+      "source": { "id": "zero-ex", "type": "aggregator", "displayName": "0x" },
+      "status": "unavailable",
+      "quote": null,
+      "evidence": [
+        {
+          "kind": "http",
+          "observedAt": "2026-07-22T20:00:00.000Z",
+          "reference": "0x:request-01",
+          "code": "NO_LIQUIDITY",
+          "message": "Provider returned no route"
+        }
+      ]
+    },
+    {
+      "source": { "id": "set-policy", "type": "setwise", "displayName": "Set", "poolId": "bstock-ai" },
+      "status": "excluded",
+      "quote": null,
+      "evidence": [
+        {
+          "kind": "policy",
+          "observedAt": "2026-07-22T20:00:00.000Z",
+          "reference": "policy:min-size",
+          "code": "BELOW_MINIMUM",
+          "message": "Request is below the Set minimum size"
+        }
+      ]
+    },
+    {
+      "source": { "id": "cached-zfi", "type": "zfi", "displayName": "ZFi cached" },
+      "status": "stale",
+      "quote": {
+        "kind": "indicative",
+        "amounts": { "input": "1000000", "output": "2490000", "limit": "2477550" },
+        "gas": { "estimatedUnits": "180000", "estimatedCost": "24000000000000" },
+        "fees": [],
+        "approvalTarget": null,
+        "expiresAt": "2026-07-22T19:59:00.000Z"
+      },
+      "evidence": [
+        {
+          "kind": "onchain",
+          "observedAt": "2026-07-22T19:58:00.000Z",
+          "reference": "base:123400",
+          "blockNumber": "123400",
+          "code": "STALE_BLOCK"
+        }
+      ]
+    },
+    {
+      "source": { "id": "broken-provider", "type": "aggregator", "displayName": "Broken provider" },
+      "status": "failed",
+      "quote": null,
+      "evidence": [
+        {
+          "kind": "http",
+          "observedAt": "2026-07-22T20:00:00.000Z",
+          "reference": "provider:request-02",
+          "code": "UPSTREAM_TIMEOUT",
+          "message": "Provider timed out"
+        }
+      ]
+    }
+  ],
+  "transaction": null
+}

@@ -143,6 +143,44 @@ disabled extension reverts before moving assets.
 - [`docs/config/CAPABILITIES.md`](./docs/config/CAPABILITIES.md) — capability
   matrix, per-chain state, and ABI behavior when a capability is unavailable.
 
+## Unified quote schema
+
+The quote service exports strict validators for the versioned, chain-aware
+`v1` request, response, and error models shared by ZFi, aggregator, and Set
+sources. Requests bind every token, router, funder, and recipient to the selected
+chain. Responses normalize source outcomes, amounts, gas, fees, approvals,
+expiry, evidence, calldata, and native value; indicative responses cannot carry
+an executable transaction, while firm responses contain exactly one.
+
+- [`docs/api/QUOTE_API_V1.md`](./docs/api/QUOTE_API_V1.md) — invariants,
+  source-state semantics, transaction rules, and stable error codes.
+- [`docs/api/quote-v1.openapi.json`](./docs/api/quote-v1.openapi.json) — OpenAPI
+  3.1 contract for `POST /v1/quotes`.
+- [`services/quote/fixtures/v1/`](./services/quote/fixtures/v1) — exact-input,
+  exact-output, indicative, firm, unavailable/excluded/stale/failed, and error
+  fixtures exercised by the service tests.
+
+## Deployment manifests (issue #3)
+
+Committed per-chain deployment records live in [`deployments/`](./deployments).
+Each manifest stores chain id, contract addresses, bytecode hashes, constructor
+inputs, deployment transactions, compiler profiles, and explorer links. UUPS
+proxy addresses are recorded separately from their implementation metadata.
+
+Offline verification (schema + config cross-check, no private keys):
+
+```bash
+npm run verify:deployments
+npm run verify:deployments:checklist
+```
+
+Optional on-chain verification uses each chain's public RPC after checking
+`eth_chainId`:
+
+```bash
+npm run verify:deployments:on-chain
+```
+
 ## Terminology
 
 In user-facing UI copy, prefer **Set** when referring to Setwise liquidity.
