@@ -60,6 +60,20 @@
       "tokenHub": null
     }
   },
+  "capabilities": {
+    "lidoStaking": {
+      "enabled": false
+    },
+    "nameNft": {
+      "enabled": false
+    },
+    "zammLiquidity": {
+      "enabled": false
+    },
+    "ownership": {
+      "enabled": true
+    }
+  },
   "aggregators": {
     "zeroEx": {
       "enabled": false

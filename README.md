@@ -129,6 +129,20 @@ Generate the typed outputs (written to the git-ignored `config/generated/`):
 npm run build:config
 ```
 
+## Chain-specific extension capabilities
+
+Issue #11 capability-gates the Ethereum-only ZFi extensions (Curve, Lido, zAMM,
+Sushi, NameNFT, and related extensions). Each chain declares a `capabilities`
+map alongside `venues`; the registry rejects an Ethereum-only capability being
+enabled on another chain and any capability whose required venues are disabled,
+so no Ethereum address is reachable from another chain configuration and a
+disabled extension reverts before moving assets.
+
+- [`config/capabilities.mjs`](./config/capabilities.mjs) — capability
+  definitions, deployment requirements, and the non-swap extension decisions.
+- [`docs/config/CAPABILITIES.md`](./docs/config/CAPABILITIES.md) — capability
+  matrix, per-chain state, and ABI behavior when a capability is unavailable.
+
 ## Unified quote schema
 
 The quote service exports strict validators for the versioned, chain-aware
@@ -145,6 +159,7 @@ an executable transaction, while firm responses contain exactly one.
 - [`services/quote/fixtures/v1/`](./services/quote/fixtures/v1) — exact-input,
   exact-output, indicative, firm, unavailable/excluded/stale/failed, and error
   fixtures exercised by the service tests.
+
 ## Deployment manifests (issue #3)
 
 Committed per-chain deployment records live in [`deployments/`](./deployments).

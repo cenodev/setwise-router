@@ -10,6 +10,11 @@
  */
 
 import { KNOWN_VENUES } from "./schema.mjs";
+import {
+  CAPABILITY_DEFINITIONS,
+  CAPABILITY_DISPLAY_NAMES,
+  KNOWN_CAPABILITIES,
+} from "./capabilities.mjs";
 
 /** UI-facing venue labels. Internal keys remain unchanged. */
 export const VENUE_DISPLAY_NAMES = Object.freeze({
@@ -42,6 +47,36 @@ function enabledAggregators(config) {
 }
 
 /**
+ * Enabled chain-specific extensions (issue #11) with the ABI functions and
+ * required venues each one gates. Disabled capabilities are omitted so a
+ * consumer can never reach an unavailable extension.
+ */
+function enabledCapabilities(config) {
+  const out = {};
+  for (const capability of KNOWN_CAPABILITIES) {
+    if (!config.capabilities?.[capability]?.enabled) continue;
+    const definition = CAPABILITY_DEFINITIONS[capability];
+    out[capability] = {
+      functions: definition.functions,
+      requiresVenues: definition.requiresVenues,
+    };
+  }
+  return out;
+}
+
+/** Every capability with its enabled flag and UI label (internal keys kept). */
+function appCapabilities(config) {
+  const out = {};
+  for (const capability of KNOWN_CAPABILITIES) {
+    out[capability] = {
+      enabled: Boolean(config.capabilities?.[capability]?.enabled),
+      displayName: CAPABILITY_DISPLAY_NAMES[capability],
+    };
+  }
+  return out;
+}
+
+/**
  * Configuration consumed by the quote service. Includes RPC env-var names,
  * infrastructure addresses, and enabled venues/aggregators per chain.
  *
@@ -67,6 +102,7 @@ export function generateServiceConfig(chains) {
       explorer: config.explorer,
       venues: enabledVenues(config),
       aggregators: enabledAggregators(config),
+      capabilities: enabledCapabilities(config),
       addressesVerified: config.addressesVerified,
     };
   }
@@ -99,6 +135,7 @@ export function generateAppConfig(chains) {
       router: config.router,
       explorer: config.explorer,
       venues,
+      capabilities: appCapabilities(config),
     };
   }
   return out;
@@ -135,6 +172,7 @@ export function generateDeployInputs(chains) {
         tokenHub: config.venues.setwise?.tokenHub ?? null,
       },
       venues,
+      capabilities: enabledCapabilities(config),
     };
   }
   return out;
