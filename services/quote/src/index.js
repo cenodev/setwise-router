@@ -57,3 +57,30 @@ export {
 export { HealthReporter } from "./health.js";
 export { MetricsCollector } from "./metrics.js";
 export { ResilientQuoteRunner } from "./resilient-runner.js";
+
+export {
+  DEFAULT_INDICATIVE_STALE_MS,
+  SetwiseIndicativeAdapter,
+  createAllSetwiseIndicativeAdapters,
+  createSetwiseIndicativeAdapter,
+  createSetwiseIndicativeAdapters,
+  discoverEligiblePools,
+  getPoolById,
+  loadPoolCatalog,
+} from "./setwise-indicative-adapter.js";
+export {
+  MockSetwiseRfqClient,
+  SetwiseRfqClient,
+} from "./setwise-rfq-client.js";
+export {
+  buildSetwiseEvidence,
+  isIndicativeQuoteStale,
+  normalizeIndicativeQuote,
+  resolveRfqAssets,
+} from "./setwise-quote-normalize.js";
+export {
+  normalizePoolRecord,
+  rejectSelfReferentialRoute,
+  validatePoolIdentity,
+  validateSupportedAssets,
+} from "./setwise-pool-catalog.js";
