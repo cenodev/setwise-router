@@ -118,9 +118,17 @@ abstract contract NativeAccounting {
     /// @notice Establish the native frame for the current top-level call. Operations
     ///         run inside the frame; the outermost caller settles it. Re-entrant
     ///         top-level frames (including nested multicalls) revert.
-    modifier nativeFrame() {
+    /// @param rejectNativeValue When true and this call begins the frame (i.e. it is
+    ///        the outermost call, not a `multicall` sub-call), revert if any native
+    ///        value is attached. Used by ERC-20-only entries so a mismatched
+    ///        `msg.value` always reverts, while still allowing them to run as
+    ///        `multicall` sub-calls that share the caller's native value.
+    modifier nativeFrame(bool rejectNativeValue) {
         bool active = _frameActive();
-        if (!active) _beginNativeFrame();
+        if (!active) {
+            if (rejectNativeValue && msg.value != 0) revert UnexpectedNativeValue(msg.value);
+            _beginNativeFrame();
+        }
         _;
         if (!active) _settleNativeFrame(payable(msg.sender));
     }
@@ -183,11 +191,6 @@ abstract contract NativeAccounting {
     ///         a mismatch.
     function _requireExactNativeValue(uint256 expected) internal view {
         if (msg.value != expected) revert NativeValueMismatch(expected, msg.value);
-    }
-
-    /// @notice Revert if any native value is attached to an ERC-20-only path.
-    function _rejectNativeValue() internal view {
-        if (msg.value != 0) revert UnexpectedNativeValue(msg.value);
     }
 
     /// @notice Wrap `amount` of the current frame's native value into `wrappedNative`.
