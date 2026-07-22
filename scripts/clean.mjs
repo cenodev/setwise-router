@@ -9,6 +9,7 @@ const targets = [
   "contracts/out",
   "contracts/cache",
   "contracts/broadcast",
+  "config/generated",
   "zFi-main/out",
   "zFi-main/cache",
 ];

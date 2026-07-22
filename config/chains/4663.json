@@ -1,0 +1,68 @@
+{
+  "chainId": 4663,
+  "key": "robinhood",
+  "displayName": "Robinhood Chain",
+  "addressesVerified": false,
+  "nativeToken": {
+    "symbol": "ETH",
+    "name": "Ether",
+    "decimals": 18
+  },
+  "wrappedNative": {
+    "symbol": "WETH",
+    "name": "Wrapped Ether",
+    "decimals": 18,
+    "address": null
+  },
+  "rpc": {
+    "publicUrl": null,
+    "primaryEnv": "RPC_URL_ROBINHOOD",
+    "archiveEnv": "RPC_ARCHIVE_URL_ROBINHOOD"
+  },
+  "multicall3": null,
+  "permit2": null,
+  "router": null,
+  "quoter": null,
+  "explorer": {
+    "name": "Robinhood Explorer",
+    "baseUrl": "https://explorer.robinhood.com",
+    "txUrlTemplate": "https://explorer.robinhood.com/tx/{hash}",
+    "addressUrlTemplate": "https://explorer.robinhood.com/address/{address}"
+  },
+  "venues": {
+    "uniswapV2": {
+      "enabled": false
+    },
+    "uniswapV3": {
+      "enabled": false
+    },
+    "uniswapV4": {
+      "enabled": false
+    },
+    "sushiswap": {
+      "enabled": false
+    },
+    "pancakeSwap": {
+      "enabled": false
+    },
+    "curve": {
+      "enabled": false
+    },
+    "lido": {
+      "enabled": false
+    },
+    "zamm": {
+      "enabled": false
+    },
+    "setwise": {
+      "enabled": false,
+      "poolRegistry": null,
+      "tokenHub": null
+    }
+  },
+  "aggregators": {
+    "zeroEx": {
+      "enabled": false
+    }
+  }
+}

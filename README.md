@@ -91,6 +91,34 @@ Regenerate (Foundry required):
 node scripts/build-setwise-abi.mjs       # rewrite baseline/abi/setwisePool.json
 node scripts/build-setwise-calldata.mjs  # rewrite baseline/setwise/calldata.json
 forge test                               # in contracts/: data-types + selector compatibility
+## Multi-chain configuration registry
+
+Issue #4 replaces Ethereum-only global constants with a typed registry keyed by
+chain ID. The canonical source is one reviewed JSON file per chain in
+[`config/chains/`](./config/chains) (`1`, `56`, `8453`, `4663`), covering native
+and wrapped-native tokens, RPC roles, Multicall3, router/quoter addresses,
+factories, pool managers, token hubs, explorers, and venue capabilities.
+
+- [`config/schema.mjs`](./config/schema.mjs) — schema (JSDoc typedefs) and
+  validation. Rejects missing fields, zero addresses, duplicate chain ids/keys
+  and single-role addresses, and cross-chain reuse of chain-unique addresses.
+  Canonical cross-chain deployments (Multicall3, Permit2) are exempt.
+- [`config/registry.mjs`](./config/registry.mjs) — loads and validates the
+  registry. `getChainConfig(chainId)` throws `UnsupportedChainError` for
+  unsupported chains; there is no implicit fallback to Ethereum.
+- [`config/generate.mjs`](./config/generate.mjs) — derives typed service,
+  frontend, and contract-deployment inputs from the single source.
+
+RPC roles reference environment-variable **names** only; credentials and
+production RPC URLs stay in `.env` (see [`.env.example`](./.env.example)) and are
+never committed or generated. Chains whose addresses are not yet verified from
+primary sources (currently Robinhood Chain) set `addressesVerified: false` and
+declare every venue as disabled rather than carrying unverified addresses.
+
+Generate the typed outputs (written to the git-ignored `config/generated/`):
+
+```bash
+npm run build:config
 ```
 
 ## Terminology
