@@ -48,3 +48,14 @@ export {
 } from "./quote-session.js";
 
 export { describeNetworkState } from "./network.js";
+
+export {
+  CONTROL_LEVELS,
+  GOVERNANCE_ROLES,
+  TIMELOCK_BOUNDS,
+  buildControlChangeAlert,
+  checkRouteEligibility,
+  describeGovernanceState,
+  describeTimelockOperation,
+  formatGovernanceAddress,
+} from "./governance.js";
