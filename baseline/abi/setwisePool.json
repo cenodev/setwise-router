@@ -1,0 +1,347 @@
+{
+  "schema": "setwise-router/setwise-pool-abi@1",
+  "contract": "ISetwisePool",
+  "source": "contracts/src/setwise/ISetwisePool.sol",
+  "interface": true,
+  "upstream": {
+    "repository": "https://github.com/cenodev/setwise-contracts",
+    "paths": [
+      "contracts/SetwisePoolBase.sol",
+      "contracts/SetwisePool.sol"
+    ],
+    "note": "Selectors, the SwapExecuted event, and the revert surface mirror the deployed SetwisePoolBase/SetwisePool swap surface. This repository vendors only the minimal interface, not the upgradeable implementation."
+  },
+  "eip712": {
+    "domainName": "SetwisePool",
+    "domainVersion": "2.0.0",
+    "swapQuoteType": "SwapQuote(address payer,address inputAsset,address outputAsset,uint256 inputAmount,uint256 outputAmount,bytes32 quoteId,uint256 deadline,address recipient)",
+    "swapQuoteTypehash": "0x05f457dcd915199b3c456f83a601d28b8a9c57b952c20f6b13c56eec1b203c13"
+  },
+  "abi": {
+    "functions": [
+      {
+        "name": "usedQuoteIds",
+        "signature": "usedQuoteIds(bytes32)",
+        "selector": "0x03ea8003",
+        "stateMutability": "view",
+        "inputs": [
+          {
+            "name": "quoteId",
+            "type": "bytes32"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "used",
+            "type": "bool"
+          }
+        ],
+        "group": "replay",
+        "notes": "One-time quoteId consumption flag"
+      },
+      {
+        "name": "WRAPPED_NATIVE_TOKEN",
+        "signature": "WRAPPED_NATIVE_TOKEN()",
+        "selector": "0x1b3f8c5e",
+        "stateMutability": "view",
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "group": "config",
+        "notes": "On-chain representation of a native leg"
+      },
+      {
+        "name": "swapExactAssetForAsset",
+        "signature": "swapExactAssetForAsset(address,address,uint256,uint256,bytes32,uint256,address,bytes,bytes)",
+        "selector": "0x24266baa",
+        "stateMutability": "nonpayable",
+        "inputs": [
+          {
+            "name": "inputAsset",
+            "type": "address"
+          },
+          {
+            "name": "outputAsset",
+            "type": "address"
+          },
+          {
+            "name": "inputAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "outputAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "quoteId",
+            "type": "bytes32"
+          },
+          {
+            "name": "deadline",
+            "type": "uint256"
+          },
+          {
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "name": "signature",
+            "type": "bytes"
+          },
+          {
+            "name": "auxiliaryData",
+            "type": "bytes"
+          }
+        ],
+        "outputs": [],
+        "group": "swap",
+        "assetMode": "erc20-to-erc20",
+        "notes": "ERC-20 -> ERC-20; pulls inputAmount of inputAsset, transfers outputAmount of outputAsset"
+      },
+      {
+        "name": "recordedBalance",
+        "signature": "recordedBalance(address)",
+        "selector": "0x5089331d",
+        "stateMutability": "view",
+        "inputs": [
+          {
+            "name": "token",
+            "type": "address"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "group": "view",
+        "notes": "Pool's internally recorded asset balance"
+      },
+      {
+        "name": "swapExactAssetForNative",
+        "signature": "swapExactAssetForNative(address,uint256,uint256,bytes32,uint256,address,bytes,bytes)",
+        "selector": "0x695d9b7f",
+        "stateMutability": "nonpayable",
+        "inputs": [
+          {
+            "name": "inputAsset",
+            "type": "address"
+          },
+          {
+            "name": "inputAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "outputAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "quoteId",
+            "type": "bytes32"
+          },
+          {
+            "name": "deadline",
+            "type": "uint256"
+          },
+          {
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "name": "signature",
+            "type": "bytes"
+          },
+          {
+            "name": "auxiliaryData",
+            "type": "bytes"
+          }
+        ],
+        "outputs": [],
+        "group": "swap",
+        "assetMode": "erc20-to-native",
+        "notes": "ERC-20 -> native; signed quote output asset is WRAPPED_NATIVE_TOKEN, pool unwraps to recipient"
+      },
+      {
+        "name": "quoteDomainSeparator",
+        "signature": "quoteDomainSeparator()",
+        "selector": "0x7102ae2a",
+        "stateMutability": "view",
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "",
+            "type": "bytes32"
+          }
+        ],
+        "group": "config",
+        "notes": "EIP-712 domain separator for SwapQuote"
+      },
+      {
+        "name": "isSupportedAsset",
+        "signature": "isSupportedAsset(address)",
+        "selector": "0x9be918e6",
+        "stateMutability": "view",
+        "inputs": [
+          {
+            "name": "token",
+            "type": "address"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "supported",
+            "type": "bool"
+          }
+        ],
+        "group": "config",
+        "notes": "Pool asset allowlist membership"
+      },
+      {
+        "name": "QUOTE_SIGNER",
+        "signature": "QUOTE_SIGNER()",
+        "selector": "0xd0e15ba4",
+        "stateMutability": "view",
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "group": "config",
+        "notes": "Address SwapQuote signatures are verified against"
+      },
+      {
+        "name": "swapExactNativeForAsset",
+        "signature": "swapExactNativeForAsset(address,uint256,uint256,bytes32,uint256,address,bytes,bytes)",
+        "selector": "0xdcf8b279",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "outputAsset",
+            "type": "address"
+          },
+          {
+            "name": "inputAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "outputAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "quoteId",
+            "type": "bytes32"
+          },
+          {
+            "name": "deadline",
+            "type": "uint256"
+          },
+          {
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "name": "signature",
+            "type": "bytes"
+          },
+          {
+            "name": "auxiliaryData",
+            "type": "bytes"
+          }
+        ],
+        "outputs": [],
+        "group": "swap",
+        "assetMode": "native-to-erc20",
+        "notes": "Native -> ERC-20; msg.value == inputAmount, signed quote input asset is WRAPPED_NATIVE_TOKEN"
+      }
+    ],
+    "events": [
+      {
+        "name": "SwapExecuted",
+        "signature": "SwapExecuted(address,address,address,uint256,uint256,bytes)",
+        "topicHash": "0xa2fe6ab887b4a569b99c1b733c36e55e75e395f7aee85044820ab8155716c9e6",
+        "inputs": [
+          {
+            "name": "inputAsset",
+            "type": "address",
+            "indexed": true
+          },
+          {
+            "name": "outputAsset",
+            "type": "address",
+            "indexed": true
+          },
+          {
+            "name": "recipient",
+            "type": "address",
+            "indexed": true
+          },
+          {
+            "name": "inAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "outAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "auxiliaryData",
+            "type": "bytes"
+          }
+        ]
+      }
+    ],
+    "errors": [
+      {
+        "name": "TradingPaused",
+        "signature": "TradingPaused()",
+        "selector": "0x02b874a6",
+        "inputs": []
+      },
+      {
+        "name": "InvalidQuoteId",
+        "signature": "InvalidQuoteId()",
+        "selector": "0x140dcdb5",
+        "inputs": []
+      },
+      {
+        "name": "InvalidSignature",
+        "signature": "InvalidSignature()",
+        "selector": "0x8baa579f",
+        "inputs": []
+      },
+      {
+        "name": "InvalidNativeAmount",
+        "signature": "InvalidNativeAmount(uint256,uint256)",
+        "selector": "0xcfdff0eb",
+        "inputs": [
+          {
+            "name": "expected",
+            "type": "uint256"
+          },
+          {
+            "name": "provided",
+            "type": "uint256"
+          }
+        ]
+      },
+      {
+        "name": "QuoteAlreadyUsed",
+        "signature": "QuoteAlreadyUsed(bytes32)",
+        "selector": "0xe6b79916",
+        "inputs": [
+          {
+            "name": "quoteId",
+            "type": "bytes32"
+          }
+        ]
+      }
+    ]
+  }
+}

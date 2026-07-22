@@ -67,6 +67,30 @@ npm run baseline:routes    # rewrite baseline/routes/calldata.json
 npm run baseline:capture   # rewrite baseline/routes/execution.json from a fork
 ```
 
+## Setwise pool interface (issue #7)
+
+The minimal Setwise pool surface the router needs to execute signed, fixed-amount
+swaps lives in [`contracts/src/setwise/`](./contracts/src/setwise): `ISetwisePool`
+(the ERC-20→ERC-20, native→ERC-20, and ERC-20→native entry points plus the
+quote-signer / wrapped-native / quote-id views, `SwapExecuted`, and the revert
+surface), `IWrappedNativeToken`, and the `SetwiseSwap` calldata types. Only the
+interface and data types are vendored — not the upgradeable Setwise
+implementation. Selectors mirror the deployed `SetwisePoolBase`/`SetwisePool`
+ABIs and are guarded by compatibility tests.
+
+- [`docs/setwise/POOL_INTERFACE.md`](./docs/setwise/POOL_INTERFACE.md) — interface,
+  EIP-712 `SwapQuote`, settlement modes, and native↔wrapped-native token
+  normalization.
+- [`baseline/abi/setwisePool.json`](./baseline/abi/setwisePool.json) — pool ABI
+  baseline; [`baseline/setwise/calldata.json`](./baseline/setwise/calldata.json) —
+  deterministic RFQ-API calldata for the three settlement modes.
+
+Regenerate (Foundry required):
+
+```bash
+node scripts/build-setwise-abi.mjs       # rewrite baseline/abi/setwisePool.json
+node scripts/build-setwise-calldata.mjs  # rewrite baseline/setwise/calldata.json
+forge test                               # in contracts/: data-types + selector compatibility
 ## Multi-chain configuration registry
 
 Issue #4 replaces Ethereum-only global constants with a typed registry keyed by
