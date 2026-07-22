@@ -33,6 +33,31 @@ export { MockQuoteAdapter } from "./mock-adapter.js";
 export { QuoteSourceRegistry } from "./registry.js";
 export { runQuoteSources } from "./runner.js";
 
+export { buildCacheKey, classifyRecipient, QuoteCache } from "./cache.js";
+export {
+  BREAKER_STATES,
+  CircuitBreaker,
+  CircuitBreakerRegistry,
+} from "./circuit-breaker.js";
+export {
+  generateCorrelationId,
+  redact,
+  redactAddresses,
+  redactApiKeys,
+  redactCalldata,
+  redactObject,
+} from "./correlation.js";
+export {
+  AllSourcesFailedError,
+  CircuitOpenError,
+  SERVICE_ERROR_CODES,
+  ServiceError,
+  SourceTimeoutError,
+} from "./errors.js";
+export { HealthReporter } from "./health.js";
+export { MetricsCollector } from "./metrics.js";
+export { ResilientQuoteRunner } from "./resilient-runner.js";
+
 export {
   DEFAULT_INDICATIVE_STALE_MS,
   SetwiseIndicativeAdapter,
