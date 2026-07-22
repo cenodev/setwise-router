@@ -17,6 +17,7 @@ const contracts = join(root, "contracts");
 
 /** Unit / local-deploy suites that do not require a mainnet fork. */
 const OFFLINE_MATCH_PATH = "test/{zSwap,ShareBurner,CollectorVault}.t.sol";
+const FORK_TEST_PATH = "test/fork/*.t.sol";
 
 const forge = resolveForge();
 if (!forge) {
@@ -39,5 +40,10 @@ if (zfiStatus !== 0) {
 }
 
 console.log("\nRunning secret-free contracts/ Foundry tests...");
-const contractsResult = runForge(forge, ["test", "-vv"], { cwd: contracts });
+console.log(`no-match-path: ${FORK_TEST_PATH}`);
+const contractsResult = runForge(
+  forge,
+  ["test", "-vv", "--no-match-path", FORK_TEST_PATH],
+  { cwd: contracts },
+);
 process.exit(contractsResult.status ?? 1);
