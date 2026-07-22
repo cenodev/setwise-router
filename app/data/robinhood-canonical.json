@@ -1,0 +1,56 @@
+{
+  "source": "https://docs.robinhood.com/chain/contracts/",
+  "sourceLabel": "Robinhood Chain Token Contracts",
+  "chainId": 4663,
+  "wrappedNative": {
+    "symbol": "WETH",
+    "name": "Wrapped Ether",
+    "decimals": 18,
+    "address": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73"
+  },
+  "stablecoins": [
+    {
+      "symbol": "USDG",
+      "name": "USDG",
+      "decimals": 18,
+      "address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168"
+    }
+  ],
+  "stockTokens": [
+    {
+      "symbol": "NVDA",
+      "name": "NVIDIA • Robinhood Token",
+      "decimals": 18,
+      "address": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+      "kind": "robinhood-stock"
+    },
+    {
+      "symbol": "AAPL",
+      "name": "Apple • Robinhood Token",
+      "decimals": 18,
+      "address": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+      "kind": "robinhood-stock"
+    },
+    {
+      "symbol": "TSLA",
+      "name": "Tesla • Robinhood Token",
+      "decimals": 18,
+      "address": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+      "kind": "robinhood-stock"
+    },
+    {
+      "symbol": "SPY",
+      "name": "SPDR S&P 500 ETF Trust • Robinhood Token",
+      "decimals": 18,
+      "address": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+      "kind": "robinhood-stock"
+    },
+    {
+      "symbol": "QQQ",
+      "name": "Invesco QQQ • Robinhood Token",
+      "decimals": 18,
+      "address": "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68",
+      "kind": "robinhood-stock"
+    }
+  ]
+}
