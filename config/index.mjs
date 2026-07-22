@@ -32,3 +32,11 @@ export {
   generateDeployInputs,
   generateAll,
 } from "./generate.mjs";
+
+export {
+  NATIVE_TOKEN_SENTINEL,
+  isNativeAsset,
+  getNativeConfig,
+  requireWrappedNative,
+  resolveNativeAsset,
+} from "./native.mjs";
