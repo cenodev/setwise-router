@@ -68,6 +68,9 @@ test("root package.json exposes CI entrypoints", () => {
     "build:contracts",
     "build:contracts:zquoter",
     "check:bytecode",
+    "verify:deployments",
+    "verify:deployments:on-chain",
+    "verify:deployments:checklist",
     "check",
   ]) {
     assert.ok(pkg.scripts[script], `missing script: ${script}`);
