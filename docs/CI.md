@@ -16,22 +16,23 @@ Neither workflow reads production secrets. Optional repository **variables**
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
-| `FOUNDRY_VERSION` | Pin for `foundry-rs/foundry-toolchain` | value in [`.foundry-version`](../.foundry-version) |
+| `FOUNDRY_VERSION` | Override for `foundry-rs/foundry-toolchain` (normally unused) | [`.foundry-version`](../.foundry-version) (`v1.7.1`) |
 | `FOUNDRY_ETH_RPC_URL` | Public/archive RPC for the fork workflow only | `https://ethereum.publicnode.com` |
 
 ## What `baseline` runs
 
 1. Submodule checkout (`zFi-main` + nested `forge-std`)
 2. Node from [`.node-version`](../.node-version) with npm cache
-3. Foundry from the pinned nightly digest
+3. Foundry from the pinned version in [`.foundry-version`](../.foundry-version)
 4. `npm run lint` / `lint:services`
 5. `npm run format`
 6. `npm run typecheck`
 7. `npm test` and `npm run test:services`
-8. `npm run build:services`
-9. Default-profile `forge build` + EIP-170 gate for **zRouter**
-10. `zquoter`-profile `forge build` + EIP-170 gate for **zQuoter** (soft headroom fails before the hard 24,576-byte limit)
-11. Secret-free Foundry unit tests (`npm run test:contracts`) — temporary foundry config **without** `eth_rpc_url`, matching `test/{zSwap,ShareBurner,CollectorVault}.t.sol`
+8. `npm run build:config` (typed multi-chain registry outputs)
+9. `npm run build:services`
+10. Default-profile `forge build` + EIP-170 gate for **zRouter**
+11. `zquoter`-profile `forge build` + EIP-170 gate for **zQuoter** (soft headroom fails before the hard 24,576-byte limit)
+12. Secret-free Foundry unit tests (`npm run test:contracts`) — temporary foundry config **without** `eth_rpc_url`, matching `test/{zSwap,ShareBurner,CollectorVault}.t.sol`
 
 ## What `fork` runs
 

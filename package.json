@@ -12,7 +12,8 @@
     "app"
   ],
   "scripts": {
-    "build": "npm run build:contracts && npm run build:services",
+    "build": "npm run build:config && npm run build:contracts && npm run build:services",
+    "build:config": "node scripts/build-config.mjs",
     "build:contracts": "node scripts/build-zfi-baseline.mjs",
     "build:contracts:zquoter": "node scripts/build-zquoter-profile.mjs",
     "build:services": "npm run build --workspace=@setwise-router/app",
@@ -26,7 +27,7 @@
     "format:fix": "node scripts/format-check.mjs --fix",
     "clean": "node scripts/clean.mjs",
     "check:bytecode": "node scripts/check-bytecode-size.mjs",
-    "check": "npm run lint && npm run typecheck && npm run format && npm run test && npm run test:services && npm run build:services && npm run check:bytecode && npm run test:contracts",
+    "check": "npm run lint && npm run typecheck && npm run format && npm run test && npm run test:services && npm run build:config && npm run build:services && npm run check:bytecode && npm run test:contracts",
     "baseline:abi": "node scripts/build-abi-baseline.mjs && node scripts/build-abi-docs.mjs",
     "baseline:routes": "node scripts/build-route-fixtures.mjs",
     "baseline:capture": "node scripts/capture-execution-fixtures.mjs"

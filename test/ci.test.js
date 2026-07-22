@@ -90,6 +90,14 @@ test("bytecode gate and forge helpers are present", () => {
   assert.match(gate, /zRouter/);
 });
 
+test("Foundry pin is an installable stable or version tag", () => {
+  const pin = read(".foundry-version").trim();
+  // Prefer stable/version tags; old nightly digests are pruned from GitHub Releases.
+  assert.match(pin, /^(stable|v\d+\.\d+\.\d+)$/);
+  assert.match(read(".github/workflows/ci.yml"), /\.foundry-version/);
+  assert.match(read(".github/workflows/ci-fork.yml"), /\.foundry-version/);
+});
+
 test("CI status checks are documented for branch protection", () => {
   const doc = read("docs/CI.md");
   assert.match(doc, /baseline/);

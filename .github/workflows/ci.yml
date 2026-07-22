@@ -66,6 +66,9 @@ jobs:
       - name: Unit tests (workspace + services)
         run: npm test && npm run test:services
 
+      - name: Build config registry outputs
+        run: npm run build:config
+
       - name: Build services
         run: npm run build:services
 

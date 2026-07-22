@@ -19,6 +19,9 @@ contracts/cache/
 contracts/broadcast/
 contracts/lib/
 
+# Generated multi-chain config (regenerate with `npm run build:config`)
+config/generated/
+
 # OS / editor
 *.swp
 *.swo
