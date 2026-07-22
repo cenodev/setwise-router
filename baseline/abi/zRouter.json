@@ -1,0 +1,1080 @@
+{
+  "contract": "zRouter",
+  "source": "zFi-main/src/zRouter.sol",
+  "upstreamCommit": "43ac1e67388cc4f96be6b2cbeb0f95f647c9aeb3",
+  "deployedBytecodeSize": 24524,
+  "deployedBytecodeHash": "0x8cad44c4aebf185e38e4f77e19dc4d480f9028eb91380295803a21bcf15d1a76",
+  "abi": {
+    "constructor": {
+      "stateMutability": "payable",
+      "inputs": []
+    },
+    "receive": true,
+    "fallback": true,
+    "functions": [
+      {
+        "name": "trust",
+        "signature": "trust(address,bool)",
+        "selector": "0x06262f1b",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "target",
+            "type": "address"
+          },
+          {
+            "name": "ok",
+            "type": "bool"
+          }
+        ],
+        "outputs": [],
+        "group": "funding",
+        "scope": "swap-support",
+        "admin": true,
+        "notes": "onlyOwner execute() target whitelist"
+      },
+      {
+        "name": "permit2TransferFrom",
+        "signature": "permit2TransferFrom(address,uint256,uint256,uint256,bytes)",
+        "selector": "0x09d31579",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "name": "nonce",
+            "type": "uint256"
+          },
+          {
+            "name": "deadline",
+            "type": "uint256"
+          },
+          {
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "outputs": [],
+        "group": "funding",
+        "scope": "swap-support",
+        "notes": "Permit2 signed single transfer"
+      },
+      {
+        "name": "deposit",
+        "signature": "deposit(address,uint256,uint256)",
+        "selector": "0x0efe6a8b",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [],
+        "group": "native",
+        "scope": "swap-support",
+        "notes": "Pull ETH/ERC-20/ERC-6909 into transient balance"
+      },
+      {
+        "name": "swapCurve",
+        "signature": "swapCurve(address,bool,address[11],uint256[4][5],address[5],uint256,uint256,uint256)",
+        "selector": "0x12db224a",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "name": "exactOut",
+            "type": "bool"
+          },
+          {
+            "name": "route",
+            "type": "address[11]"
+          },
+          {
+            "name": "swapParams",
+            "type": "uint256[4][5]"
+          },
+          {
+            "name": "basePools",
+            "type": "address[5]"
+          },
+          {
+            "name": "swapAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "amountLimit",
+            "type": "uint256"
+          },
+          {
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "amountIn",
+            "type": "uint256"
+          },
+          {
+            "name": "amountOut",
+            "type": "uint256"
+          }
+        ],
+        "group": "swap",
+        "scope": "core-swap",
+        "venue": "CURVE",
+        "notes": "Up to 5 hops; exchange/underlying/add_liquidity/remove_liquidity_one_coin"
+      },
+      {
+        "name": "onERC721Received",
+        "signature": "onERC721Received(address,address,uint256,bytes)",
+        "selector": "0x150b7a02",
+        "stateMutability": "pure",
+        "inputs": [
+          {
+            "name": "",
+            "type": "address"
+          },
+          {
+            "name": "",
+            "type": "address"
+          },
+          {
+            "name": "",
+            "type": "uint256"
+          },
+          {
+            "name": "",
+            "type": "bytes"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "",
+            "type": "bytes4"
+          }
+        ],
+        "group": "extension",
+        "scope": "extension",
+        "notes": "ERC-721 receiver hook used during NameNFT reveal"
+      },
+      {
+        "name": "swapV4",
+        "signature": "swapV4(address,bool,uint24,int24,address,address,uint256,uint256,uint256)",
+        "selector": "0x21c0dad2",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "name": "exactOut",
+            "type": "bool"
+          },
+          {
+            "name": "swapFee",
+            "type": "uint24"
+          },
+          {
+            "name": "tickSpace",
+            "type": "int24"
+          },
+          {
+            "name": "tokenIn",
+            "type": "address"
+          },
+          {
+            "name": "tokenOut",
+            "type": "address"
+          },
+          {
+            "name": "swapAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "amountLimit",
+            "type": "uint256"
+          },
+          {
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "amountIn",
+            "type": "uint256"
+          },
+          {
+            "name": "amountOut",
+            "type": "uint256"
+          }
+        ],
+        "group": "swap",
+        "scope": "core-swap",
+        "venue": "UNI_V4"
+      },
+      {
+        "name": "permitDAI",
+        "signature": "permitDAI(uint256,uint256,uint8,bytes32,bytes32)",
+        "selector": "0x230390f4",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "nonce",
+            "type": "uint256"
+          },
+          {
+            "name": "expiry",
+            "type": "uint256"
+          },
+          {
+            "name": "v",
+            "type": "uint8"
+          },
+          {
+            "name": "r",
+            "type": "bytes32"
+          },
+          {
+            "name": "s",
+            "type": "bytes32"
+          }
+        ],
+        "outputs": [],
+        "group": "funding",
+        "scope": "swap-support",
+        "notes": "DAI-style permit"
+      },
+      {
+        "name": "revealName",
+        "signature": "revealName(string,bytes32,address)",
+        "selector": "0x2cb9f974",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "label",
+            "type": "string"
+          },
+          {
+            "name": "innerSecret",
+            "type": "bytes32"
+          },
+          {
+            "name": "to",
+            "type": "address"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "tokenId",
+            "type": "uint256"
+          }
+        ],
+        "group": "extension",
+        "scope": "extension",
+        "ethereumOnly": true,
+        "notes": "NameNFT .wei commit-reveal registration"
+      },
+      {
+        "name": "snwapMulti",
+        "signature": "snwapMulti(address,uint256,address,address[],uint256[],address,bytes)",
+        "selector": "0x3f896275",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "tokenIn",
+            "type": "address"
+          },
+          {
+            "name": "amountIn",
+            "type": "uint256"
+          },
+          {
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "name": "tokensOut",
+            "type": "address[]"
+          },
+          {
+            "name": "amountsOutMin",
+            "type": "uint256[]"
+          },
+          {
+            "name": "executor",
+            "type": "address"
+          },
+          {
+            "name": "executorData",
+            "type": "bytes"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "amountsOut",
+            "type": "uint256[]"
+          }
+        ],
+        "group": "swap",
+        "scope": "core-swap",
+        "venue": "EXECUTOR",
+        "notes": "Multi-output executor swap"
+      },
+      {
+        "name": "ensureAllowance",
+        "signature": "ensureAllowance(address,bool,address)",
+        "selector": "0x41abb1ef",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "name": "is6909",
+            "type": "bool"
+          },
+          {
+            "name": "to",
+            "type": "address"
+          }
+        ],
+        "outputs": [],
+        "group": "funding",
+        "scope": "swap-support",
+        "admin": true,
+        "notes": "onlyOwner max approval / ERC-6909 operator"
+      },
+      {
+        "name": "exactETHToSTETH",
+        "signature": "exactETHToSTETH(address)",
+        "selector": "0x47c1ba3a",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "address"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "shares",
+            "type": "uint256"
+          }
+        ],
+        "group": "native",
+        "scope": "swap-support",
+        "venue": "LIDO",
+        "ethereumOnly": true,
+        "notes": "Exact-in ETH -> stETH"
+      },
+      {
+        "name": "snwap",
+        "signature": "snwap(address,uint256,address,address,uint256,address,bytes)",
+        "selector": "0x5f3bd1c8",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "tokenIn",
+            "type": "address"
+          },
+          {
+            "name": "amountIn",
+            "type": "uint256"
+          },
+          {
+            "name": "recipient",
+            "type": "address"
+          },
+          {
+            "name": "tokenOut",
+            "type": "address"
+          },
+          {
+            "name": "amountOutMin",
+            "type": "uint256"
+          },
+          {
+            "name": "executor",
+            "type": "address"
+          },
+          {
+            "name": "executorData",
+            "type": "bytes"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "amountOut",
+            "type": "uint256"
+          }
+        ],
+        "group": "swap",
+        "scope": "core-swap",
+        "venue": "EXECUTOR",
+        "notes": "Generic executor swap; Bebop/Bitgetol/any via safeExecutor"
+      },
+      {
+        "name": "swapV2",
+        "signature": "swapV2(address,bool,address,address,uint256,uint256,uint256)",
+        "selector": "0x6e0a4f98",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "name": "exactOut",
+            "type": "bool"
+          },
+          {
+            "name": "tokenIn",
+            "type": "address"
+          },
+          {
+            "name": "tokenOut",
+            "type": "address"
+          },
+          {
+            "name": "swapAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "amountLimit",
+            "type": "uint256"
+          },
+          {
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "amountIn",
+            "type": "uint256"
+          },
+          {
+            "name": "amountOut",
+            "type": "uint256"
+          }
+        ],
+        "group": "swap",
+        "scope": "core-swap",
+        "venue": "UNI_V2|SUSHI",
+        "notes": "deadline == type(uint256).max sentinel selects the SUSHI factory"
+      },
+      {
+        "name": "permit2BatchTransferFrom",
+        "signature": "permit2BatchTransferFrom((address,uint256)[],uint256,uint256,bytes)",
+        "selector": "0x7984d8b1",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "permitted",
+            "type": "tuple[]",
+            "components": [
+              {
+                "name": "token",
+                "type": "address"
+              },
+              {
+                "name": "amount",
+                "type": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "nonce",
+            "type": "uint256"
+          },
+          {
+            "name": "deadline",
+            "type": "uint256"
+          },
+          {
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "outputs": [],
+        "group": "funding",
+        "scope": "swap-support",
+        "notes": "Permit2 signed batch transfer"
+      },
+      {
+        "name": "permit",
+        "signature": "permit(address,uint256,uint256,uint8,bytes32,bytes32)",
+        "selector": "0x7ac2ff7b",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "name": "value",
+            "type": "uint256"
+          },
+          {
+            "name": "deadline",
+            "type": "uint256"
+          },
+          {
+            "name": "v",
+            "type": "uint8"
+          },
+          {
+            "name": "r",
+            "type": "bytes32"
+          },
+          {
+            "name": "s",
+            "type": "bytes32"
+          }
+        ],
+        "outputs": [],
+        "group": "funding",
+        "scope": "swap-support",
+        "notes": "ERC-2612 permit"
+      },
+      {
+        "name": "unlockCallback",
+        "signature": "unlockCallback(bytes)",
+        "selector": "0x91dd7346",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "callbackData",
+            "type": "bytes"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "result",
+            "type": "bytes"
+          }
+        ],
+        "group": "plumbing",
+        "scope": "swap-support",
+        "venue": "UNI_V4",
+        "notes": "V4 PoolManager unlock callback"
+      },
+      {
+        "name": "swapVZ",
+        "signature": "swapVZ(address,bool,uint256,address,address,uint256,uint256,uint256,uint256,uint256)",
+        "selector": "0x9d5b5af8",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "name": "exactOut",
+            "type": "bool"
+          },
+          {
+            "name": "feeOrHook",
+            "type": "uint256"
+          },
+          {
+            "name": "tokenIn",
+            "type": "address"
+          },
+          {
+            "name": "tokenOut",
+            "type": "address"
+          },
+          {
+            "name": "idIn",
+            "type": "uint256"
+          },
+          {
+            "name": "idOut",
+            "type": "uint256"
+          },
+          {
+            "name": "swapAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "amountLimit",
+            "type": "uint256"
+          },
+          {
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "amountIn",
+            "type": "uint256"
+          },
+          {
+            "name": "amountOut",
+            "type": "uint256"
+          }
+        ],
+        "group": "swap",
+        "scope": "core-swap",
+        "venue": "ZAMM",
+        "notes": "Raw selectors to ZAMM/ZAMM_0; ERC-20 (id 0) and ERC-6909 ids"
+      },
+      {
+        "name": "multicall",
+        "signature": "multicall(bytes[])",
+        "selector": "0xac9650d8",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "data",
+            "type": "bytes[]"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "results",
+            "type": "bytes[]"
+          }
+        ],
+        "group": "plumbing",
+        "scope": "swap-support",
+        "notes": "delegatecall batch; the chaining primitive"
+      },
+      {
+        "name": "swapV3",
+        "signature": "swapV3(address,bool,uint24,address,address,uint256,uint256,uint256)",
+        "selector": "0xafeae12b",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "name": "exactOut",
+            "type": "bool"
+          },
+          {
+            "name": "swapFee",
+            "type": "uint24"
+          },
+          {
+            "name": "tokenIn",
+            "type": "address"
+          },
+          {
+            "name": "tokenOut",
+            "type": "address"
+          },
+          {
+            "name": "swapAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "amountLimit",
+            "type": "uint256"
+          },
+          {
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "amountIn",
+            "type": "uint256"
+          },
+          {
+            "name": "amountOut",
+            "type": "uint256"
+          }
+        ],
+        "group": "swap",
+        "scope": "core-swap",
+        "venue": "UNI_V3"
+      },
+      {
+        "name": "execute",
+        "signature": "execute(address,uint256,bytes)",
+        "selector": "0xb61d27f6",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "target",
+            "type": "address"
+          },
+          {
+            "name": "value",
+            "type": "uint256"
+          },
+          {
+            "name": "data",
+            "type": "bytes"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "result",
+            "type": "bytes"
+          }
+        ],
+        "group": "plumbing",
+        "scope": "swap-support",
+        "notes": "Call a trusted target; locks the V3/V4 callback slot"
+      },
+      {
+        "name": "ethToExactSTETH",
+        "signature": "ethToExactSTETH(address,uint256)",
+        "selector": "0xbd6b76d7",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "name": "exactOut",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [],
+        "group": "native",
+        "scope": "swap-support",
+        "venue": "LIDO",
+        "ethereumOnly": true,
+        "notes": "Exact-out ETH -> stETH"
+      },
+      {
+        "name": "ethToExactWSTETH",
+        "signature": "ethToExactWSTETH(address,uint256)",
+        "selector": "0xc391b381",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "name": "exactOut",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [],
+        "group": "native",
+        "scope": "swap-support",
+        "venue": "LIDO",
+        "ethereumOnly": true,
+        "notes": "Exact-out ETH -> wstETH"
+      },
+      {
+        "name": "addLiquidity",
+        "signature": "addLiquidity((uint256,uint256,address,address,uint256),uint256,uint256,uint256,uint256,address,uint256)",
+        "selector": "0xc42957a8",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "poolKey",
+            "type": "tuple",
+            "components": [
+              {
+                "name": "id0",
+                "type": "uint256"
+              },
+              {
+                "name": "id1",
+                "type": "uint256"
+              },
+              {
+                "name": "token0",
+                "type": "address"
+              },
+              {
+                "name": "token1",
+                "type": "address"
+              },
+              {
+                "name": "feeOrHook",
+                "type": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "amount0Desired",
+            "type": "uint256"
+          },
+          {
+            "name": "amount1Desired",
+            "type": "uint256"
+          },
+          {
+            "name": "amount0Min",
+            "type": "uint256"
+          },
+          {
+            "name": "amount1Min",
+            "type": "uint256"
+          },
+          {
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "amount0",
+            "type": "uint256"
+          },
+          {
+            "name": "amount1",
+            "type": "uint256"
+          },
+          {
+            "name": "liquidity",
+            "type": "uint256"
+          }
+        ],
+        "group": "liquidity",
+        "scope": "extension",
+        "venue": "ZAMM",
+        "notes": "Mints zAMM liquidity; NOT a swap (no router slippage/deadline guard)"
+      },
+      {
+        "name": "sweep",
+        "signature": "sweep(address,uint256,uint256,address)",
+        "selector": "0xcb019b84",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "name": "to",
+            "type": "address"
+          }
+        ],
+        "outputs": [],
+        "group": "plumbing",
+        "scope": "swap-support",
+        "notes": "Withdraw ETH/ERC-20/ERC-6909"
+      },
+      {
+        "name": "unwrap",
+        "signature": "unwrap(uint256)",
+        "selector": "0xde0e9a3e",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [],
+        "group": "native",
+        "scope": "swap-support",
+        "notes": "WETH -> ETH"
+      },
+      {
+        "name": "safeExecutor",
+        "signature": "safeExecutor()",
+        "selector": "0xe8382b01",
+        "stateMutability": "view",
+        "inputs": [],
+        "outputs": [
+          {
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "group": "plumbing",
+        "scope": "swap-support",
+        "notes": "Immutable SafeExecutor getter"
+      },
+      {
+        "name": "wrap",
+        "signature": "wrap(uint256)",
+        "selector": "0xea598cb0",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [],
+        "group": "native",
+        "scope": "swap-support",
+        "notes": "ETH -> WETH"
+      },
+      {
+        "name": "transferOwnership",
+        "signature": "transferOwnership(address)",
+        "selector": "0xf2fde38b",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "owner",
+            "type": "address"
+          }
+        ],
+        "outputs": [],
+        "group": "admin",
+        "scope": "extension",
+        "admin": true
+      },
+      {
+        "name": "exactETHToWSTETH",
+        "signature": "exactETHToWSTETH(address)",
+        "selector": "0xf978602c",
+        "stateMutability": "payable",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "address"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "wstOut",
+            "type": "uint256"
+          }
+        ],
+        "group": "native",
+        "scope": "swap-support",
+        "venue": "LIDO",
+        "ethereumOnly": true,
+        "notes": "Exact-in ETH -> wstETH"
+      }
+    ],
+    "events": [
+      {
+        "name": "OwnershipTransferred",
+        "signature": "OwnershipTransferred(address,address)",
+        "topicHash": "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0",
+        "inputs": [
+          {
+            "name": "from",
+            "type": "address",
+            "indexed": true
+          },
+          {
+            "name": "to",
+            "type": "address",
+            "indexed": true
+          }
+        ]
+      }
+    ],
+    "errors": [
+      {
+        "name": "Expired",
+        "signature": "Expired()",
+        "selector": "0x203d82d8",
+        "inputs": []
+      },
+      {
+        "name": "SnwapSlippage",
+        "signature": "SnwapSlippage(address,uint256,uint256)",
+        "selector": "0x20768e08",
+        "inputs": [
+          {
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "name": "received",
+            "type": "uint256"
+          },
+          {
+            "name": "minimum",
+            "type": "uint256"
+          }
+        ]
+      },
+      {
+        "name": "SwapExactInFail",
+        "signature": "SwapExactInFail()",
+        "selector": "0x28982d61",
+        "inputs": []
+      },
+      {
+        "name": "BadSwap",
+        "signature": "BadSwap()",
+        "selector": "0x7c7f7bb9",
+        "inputs": []
+      },
+      {
+        "name": "Slippage",
+        "signature": "Slippage()",
+        "selector": "0x7dd37f70",
+        "inputs": []
+      },
+      {
+        "name": "Unauthorized",
+        "signature": "Unauthorized()",
+        "selector": "0x82b42900",
+        "inputs": []
+      },
+      {
+        "name": "InvalidMsgVal",
+        "signature": "InvalidMsgVal()",
+        "selector": "0x85cf0a35",
+        "inputs": []
+      },
+      {
+        "name": "ETHTransferFailed",
+        "signature": "ETHTransferFailed()",
+        "selector": "0xb12d13eb",
+        "inputs": []
+      },
+      {
+        "name": "SwapExactOutFail",
+        "signature": "SwapExactOutFail()",
+        "selector": "0xb4fff567",
+        "inputs": []
+      },
+      {
+        "name": "InvalidId",
+        "signature": "InvalidId()",
+        "selector": "0xdfa1a408",
+        "inputs": []
+      }
+    ]
+  }
+}
