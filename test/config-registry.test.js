@@ -355,7 +355,7 @@ test("deploy inputs surface verified core addresses", () => {
   assert.match(deploy.chains[1].venues.uniswapV3.initCodeHash, /^0x[0-9a-f]{64}$/);
   assert.deepEqual(deploy.chains[1].venues.uniswapV3.fees, [100, 500, 3000, 10000]);
   assert.equal(deploy.chains[1].venues.uniswapV4.hookPolicy, "hookless");
-  assert.equal(deploy.chains[56].venues.pancakeSwap.feeBps, 20);
+  assert.equal(deploy.chains[56].venues.pancakeSwap.feeBps, 25);
 });
 
 test("generation is deterministic", () => {

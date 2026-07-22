@@ -167,6 +167,29 @@ disabled extension reverts before moving assets.
 - [`docs/config/CAPABILITIES.md`](./docs/config/CAPABILITIES.md) — capability
   matrix, per-chain state, and ABI behavior when a capability is unavailable.
 
+## Chain-aware direct AMM adapters
+
+Issue #12 extracts direct V2, V3, and V4 execution into
+[`ChainAwareAmmAdapter.sol`](./contracts/src/amm/ChainAwareAmmAdapter.sol). Each
+deployment binds its chain ID, wrapped-native token, V2 factory/init-code
+hash/fee, V3 factory/init-code hash/fee tiers, and V4 PoolManager as immutables.
+The existing exact-input/exact-output swap model and secondary-V2 deadline
+sentinel remain available. Unsupported adapters, V3 fees, and V4 hooks revert
+before funds move; V3 and V4 callbacks require both the expected pool/manager
+and a transient active-swap commitment.
+
+The fork matrix covers every enabled adapter in canonical configuration:
+Ethereum Uniswap V2, Sushi, V3, and hookless V4; BSC Pancake V2 and Uniswap V3;
+and Base Uniswap V3 and hookless V4. Robinhood remains explicitly disabled
+until its venue addresses are verified.
+
+- [`docs/setwise/AMM_ADAPTERS.md`](./docs/setwise/AMM_ADAPTERS.md) — immutable
+  constructor mapping, callback security, and fork coverage.
+- [`contracts/test/ChainAwareAmmAdapter.t.sol`](./contracts/test/ChainAwareAmmAdapter.t.sol)
+  — deterministic exact-mode and rejection tests.
+- [`contracts/test/fork/ChainAwareAmmAdapterFork.t.sol`](./contracts/test/fork/ChainAwareAmmAdapterFork.t.sol)
+  — live enabled-adapter matrix.
+
 ## Unified quote schema
 
 The quote service exports strict validators for the versioned, chain-aware

@@ -75,6 +75,9 @@ jobs:
         if: ${{ vars.FOUNDRY_ETH_RPC_URL != '' }}
         env:
           FOUNDRY_ETH_RPC_URL: ${{ vars.FOUNDRY_ETH_RPC_URL }}
+          RPC_URL_BSC: ${{ vars.RPC_URL_BSC }}
+          RPC_ARCHIVE_URL_BSC: ${{ vars.RPC_ARCHIVE_URL_BSC }}
+          RPC_URL_BASE: ${{ vars.RPC_URL_BASE }}
         run: node scripts/test-contracts-fork.mjs
 
       - name: Fork summary
@@ -83,7 +86,7 @@ jobs:
           {
             echo "## Fork CI"
             echo ""
-            echo "Manual/scheduled only. Uses \`vars.FOUNDRY_ETH_RPC_URL\` (archive RPC),"
+            echo "Manual/scheduled only. Uses the configured per-chain RPC roles,"
             echo "not production secrets, and is **not** a required status check."
             echo "Required PR protection stays on the \`baseline\` job in \`CI\`."
           } >> "$GITHUB_STEP_SUMMARY"

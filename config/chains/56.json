@@ -49,7 +49,7 @@
       "enabled": true,
       "factory": "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73",
       "initCodeHash": "0x00fb7f630766e6a796048ea87d01acd3068e8ff67d078148a3fa3f4a84f69bd5",
-      "feeBps": 20
+      "feeBps": 25
     },
     "curve": {
       "enabled": false
