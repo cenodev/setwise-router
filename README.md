@@ -142,6 +142,26 @@ cd contracts && forge test --match-contract SetwiseRouterAuthorizationTest
 npm run test --workspace=@setwise-router/quote
 ```
 
+## Set ERC-20 execution (issue #15)
+
+`SetwiseExecutionAdapter` is the direct Set execution path for signed,
+fixed-amount ERC-20 → ERC-20 swaps. Every guard runs before funds move: chain
+binding, native-value rejection, the governed pool registry
+(`requireEnabledPool`), router-control kill switches
+(`requireRouteEligible`), and the RFQ-issued EIP-712 authorization. The adapter
+pulls exactly the authorized input from the funding wallet, grants the pool an
+exact per-swap allowance that is cleared after execution, enforces the fixed
+output by balance-delta measurement, and emits complete execution metadata.
+Output may settle directly to the user or to the router itself for future
+composition; a direct execution leaves zero router balance and zero allowance.
+
+- [`contracts/src/setwise/SetwiseExecutionAdapter.sol`](./contracts/src/setwise/SetwiseExecutionAdapter.sol)
+- [`docs/setwise/ERC20_EXECUTION.md`](./docs/setwise/ERC20_EXECUTION.md)
+
+```bash
+cd contracts && forge test --match-contract SetwiseExecutionAdapterTest
+```
+
 ## Multi-chain configuration registry
 
 Issue #4 replaces Ethereum-only global constants with a typed registry keyed by
