@@ -1,0 +1,77 @@
+name: CI Fork
+
+# Fork-backed Foundry suites. Clearly separated from the deterministic baseline
+# so public-RPC flakiness cannot block required PR checks.
+# Uses a public Ethereum RPC — no production secrets.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekday mornings UTC — smoke the fork suite without gating PRs.
+    - cron: "0 6 * * 1-5"
+  pull_request:
+    paths:
+      - "zFi-main/**"
+      - "scripts/test-contracts-fork.mjs"
+      - "scripts/lib/forge.mjs"
+      - ".github/workflows/ci-fork.yml"
+      - ".foundry-version"
+
+concurrency:
+  group: ci-fork-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  fork:
+    name: fork
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # Public RPC can flake; keep the job visible on PRs that touch contracts
+    # without making it a required status check (see docs/CI.md).
+    continue-on-error: true
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Read pinned Foundry version
+        id: foundry
+        run: echo "version=$(tr -d '[:space:]' < .foundry-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ steps.foundry.outputs.version }}
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Build contracts (default profile)
+        run: npm run build:contracts
+
+      - name: Run fork Foundry tests (public RPC)
+        env:
+          # Override only with a non-secret public/archive URL if desired.
+          FOUNDRY_ETH_RPC_URL: ${{ vars.FOUNDRY_ETH_RPC_URL || 'https://ethereum.publicnode.com' }}
+        run: node scripts/test-contracts-fork.mjs
+
+      - name: Fork summary
+        if: always()
+        run: |
+          {
+            echo "## Fork CI"
+            echo ""
+            echo "Uses a public Ethereum RPC and is **not** a required status check."
+            echo "Required PR protection stays on the \`baseline\` job in \`CI\`."
+          } >> "$GITHUB_STEP_SUMMARY"

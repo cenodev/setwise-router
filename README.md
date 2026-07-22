@@ -30,11 +30,19 @@ git submodule update --init --recursive
 Requires [Foundry](https://getfoundry.sh/) on `PATH` for contract builds.
 
 ```bash
-npm test          # provenance + ABI/route baseline verification
-npm run lint      # syntax-check verification scripts and ZFi quote service
-npm run typecheck # same surface as lint for this baseline (JS syntax)
-npm run build     # forge build of the untouched zFi-main snapshot
+npm test                 # provenance + ABI/route baseline + CI config tests
+npm run lint             # syntax-check verification scripts and quote service
+npm run typecheck        # same surface as lint for this baseline (JS syntax)
+npm run format           # format/syntax gate for JS packages
+npm run build            # forge build (default) + app build stub
+npm run check:bytecode   # EIP-170 / soft-headroom gate (default + zquoter)
+npm run test:contracts   # secret-free Foundry unit suite (no RPC)
+npm run check            # full local gate matching CI baseline
 ```
+
+CI workflows and required branch-protection checks are documented in
+[`docs/CI.md`](./docs/CI.md). Pull requests run the deterministic `baseline`
+job; fork-backed Foundry suites are separate and non-blocking.
 
 `npm test` includes `test/abi-baseline.test.js`, which fails if the pinned
 submodule's router/quoter ABI or any committed baseline fixture changes
