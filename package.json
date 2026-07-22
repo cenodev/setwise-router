@@ -8,9 +8,12 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test test/provenance.test.js",
+    "test": "node --test test/*.test.js",
     "lint": "node scripts/syntax-check.mjs",
     "typecheck": "node scripts/syntax-check.mjs",
-    "build": "node scripts/build-zfi-baseline.mjs"
+    "build": "node scripts/build-zfi-baseline.mjs",
+    "baseline:abi": "node scripts/build-abi-baseline.mjs && node scripts/build-abi-docs.mjs",
+    "baseline:routes": "node scripts/build-route-fixtures.mjs",
+    "baseline:capture": "node scripts/capture-execution-fixtures.mjs"
   }
 }
