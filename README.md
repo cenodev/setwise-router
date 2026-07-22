@@ -226,6 +226,41 @@ an executable transaction, while firm responses contain exactly one.
   exact-output, indicative, firm, unavailable/excluded/stale/failed, and error
   fixtures exercised by the service tests.
 
+## ZFi on-chain quoter source adapter (issue #21)
+
+`ZfiQuoteAdapter` wraps each chain's deployed ZFi-compatible quoter and route
+builders behind the unified quote-source interface (issue #18), producing
+normalized quotes that match the schema above. It supports the direct,
+multi-hop, split, hybrid, and three-hop route builders where they are enabled,
+and returns executable router calldata plus structured route evidence.
+
+- Verification first: every quote checks `eth_chainId` and the quoter's
+  deployment code (`eth_getCode`, optionally against an expected runtime
+  bytecode hash) before any read, failing closed on a mismatch.
+- Batched reads: enabled builders are fanned into one Multicall3 `aggregate3`
+  call against the chain's verified Multicall3 deployment, with per-call
+  `allowFailure` so a reverting builder is reported per route instead of failing
+  the whole quote.
+- Generated ABI tooling: encoding/decoding is driven by the pinned
+  [`baseline/abi/zQuoter.json`](./baseline/abi/zQuoter.json) rather than
+  duplicated byte offsets, so it stays in lockstep with the issue #5 baseline.
+- Capability gating: route builders are gated per chain from the enabled venues
+  (split/hybrid need at least two venues) plus explicit per-deployment
+  overrides; exact-output excludes the exact-in-only split builders.
+
+The adapter is transport-agnostic for deterministic, RPC-free tests;
+`createRpcTransport(rpcUrl)` provides a JSON-RPC-backed implementation. Internal
+identifiers keep `pool`/`poolId`; user-facing copy prefers **Set**.
+
+- [`services/quote/src/zfi-abi.js`](./services/quote/src/zfi-abi.js) — ABI coder
+  and Multicall3 `aggregate3` batching.
+- [`services/quote/src/zfi-adapter.js`](./services/quote/src/zfi-adapter.js) —
+  the chain-aware source adapter and route builders.
+
+```bash
+npm run test --workspace=@setwise-router/quote
+```
+
 ## Deployment manifests (issue #3)
 
 Committed per-chain deployment records live in [`deployments/`](./deployments).
