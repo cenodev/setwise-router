@@ -11,6 +11,7 @@ import { resolveForge, runForge } from "./lib/forge.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const zfi = join(root, "zFi-main");
+const contracts = join(root, "contracts");
 
 const rpc =
   process.env.FOUNDRY_ETH_RPC_URL ||
@@ -28,7 +29,7 @@ console.log(`Running fork Foundry tests against ${rpc} (pinned block from foundr
 
 const FORK_MATCH_PATH = "test/{zQuoterFork,zQuoterCurveCalldata}.t.sol";
 
-const result = runForge(
+const upstreamResult = runForge(
   forge,
   ["test", "--fork-url", rpc, "--match-path", FORK_MATCH_PATH, "-vv"],
   {
@@ -37,4 +38,23 @@ const result = runForge(
   },
 );
 
-process.exit(result.status ?? 1);
+if ((upstreamResult.status ?? 1) !== 0) process.exit(upstreamResult.status ?? 1);
+
+console.log("\nRunning chain-aware AMM adapter forks (Ethereum, BSC, Base, Robinhood matrix)...");
+const adapterEnv = {
+  ...process.env,
+  RPC_URL_ETHEREUM: process.env.RPC_URL_ETHEREUM || rpc,
+};
+for (const name of ["RPC_URL_BSC", "RPC_ARCHIVE_URL_BSC", "RPC_URL_BASE"]) {
+  if (!adapterEnv[name]) delete adapterEnv[name];
+}
+const adapterResult = runForge(
+  forge,
+  ["test", "--match-path", "test/fork/ChainAwareAmmAdapterFork.t.sol", "-vv"],
+  {
+    cwd: contracts,
+    env: adapterEnv,
+  },
+);
+
+process.exit(adapterResult.status ?? 1);

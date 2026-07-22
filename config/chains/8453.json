@@ -35,11 +35,14 @@
     },
     "uniswapV3": {
       "enabled": true,
-      "factory": "0x33128a8fC17869897dcE68Ed026d694621f6FDfD"
+      "factory": "0x33128a8fC17869897dcE68Ed026d694621f6FDfD",
+      "initCodeHash": "0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54",
+      "fees": [100, 500, 3000, 10000]
     },
     "uniswapV4": {
       "enabled": true,
-      "poolManager": "0x498581fF718922c3f8e6A244956aF099B2652b2b"
+      "poolManager": "0x498581fF718922c3f8e6A244956aF099B2652b2b",
+      "hookPolicy": "hookless"
     },
     "sushiswap": {
       "enabled": false

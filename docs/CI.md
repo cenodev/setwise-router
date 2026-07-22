@@ -18,6 +18,9 @@ Neither workflow reads production secrets. Optional repository **variables**
 | --- | --- | --- |
 | `FOUNDRY_VERSION` | Override for `foundry-rs/foundry-toolchain` (normally unused) | [`.foundry-version`](../.foundry-version) (`v1.7.1`) |
 | `FOUNDRY_ETH_RPC_URL` | Archive-capable Ethereum RPC for the fork workflow | unset (fork job skips tests) |
+| `RPC_URL_BSC` | BSC primary RPC for latest-state adapter forks | canonical public RPC |
+| `RPC_ARCHIVE_URL_BSC` | Optional archive BSC RPC for the pinned adapter block | unset (uses latest-state primary RPC) |
+| `RPC_URL_BASE` | Base RPC for the pinned adapter forks | canonical public RPC |
 
 ## What `baseline` runs
 
@@ -37,8 +40,13 @@ Neither workflow reads production secrets. Optional repository **variables**
 
 ## What `fork` runs
 
-`node scripts/test-contracts-fork.mjs` against an **archive-capable** Ethereum
-RPC supplied as repository variable `FOUNDRY_ETH_RPC_URL` (not a secret).
+`node scripts/test-contracts-fork.mjs` runs the upstream suite against an
+**archive-capable** Ethereum RPC supplied as repository variable
+`FOUNDRY_ETH_RPC_URL` (not a secret), then exercises every enabled direct AMM
+adapter on Ethereum, BSC, and Base. Robinhood is asserted to have no enabled
+adapter while its deployment addresses remain unverified. Ethereum and Base
+use pinned blocks; BSC uses `RPC_ARCHIVE_URL_BSC` at its pinned block when set,
+or `RPC_URL_BSC` at latest because the canonical public endpoint is non-archive.
 Triggered only on `workflow_dispatch` and a weekday schedule — **not** on pull
 requests — so public/non-archive RPC gaps cannot mark a PR unstable. If the
 variable is unset, the job succeeds after skipping the fork suites.
@@ -60,5 +68,5 @@ once `baseline` is stable.
 npm run check            # lint, typecheck, format, tests, bytecode gate, offline forge
 npm run check:bytecode   # rebuilds each profile and gates EIP-170 / soft headroom
 npm run test:contracts   # secret-free Foundry suite
-node scripts/test-contracts-fork.mjs   # optional fork smoke (needs public RPC)
+node scripts/test-contracts-fork.mjs   # upstream + per-chain direct-AMM fork matrix
 ```

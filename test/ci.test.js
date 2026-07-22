@@ -95,6 +95,16 @@ test("bytecode gate and forge helpers are present", () => {
   assert.match(gate, /zRouter/);
 });
 
+test("secret-free Foundry tests exclude fork suites", () => {
+  const offline = read("scripts/test-contracts.mjs");
+  const fork = read("scripts/test-contracts-fork.mjs");
+
+  assert.match(offline, /--no-match-path/);
+  assert.match(offline, /test\/fork\/\*\.t\.sol/);
+  assert.match(fork, /--match-path/);
+  assert.match(fork, /test\/fork\/ChainAwareAmmAdapterFork\.t\.sol/);
+});
+
 test("Foundry pin is an installable stable or version tag", () => {
   const pin = read(".foundry-version").trim();
   // Prefer stable/version tags; old nightly digests are pruned from GitHub Releases.
