@@ -1,0 +1,16 @@
+# NOTICE
+
+This repository includes an immutable import of the ZFi router stack.
+
+- Upstream project: https://github.com/z-fi/zFi
+- Pinned commit: 43ac1e67388cc4f96be6b2cbeb0f95f647c9aeb3
+- Upstream license: MIT License
+- Upstream copyright: Copyright (c) 2026 ZAMM
+
+The complete upstream license text is preserved at:
+
+- `zFi-main/LICENSE`
+- root `LICENSE` (includes the upstream MIT text plus a notice for Setwise-added docs/tooling)
+
+Provenance details: `docs/upstream/PROVENANCE.md`
+Fork / dependency map: `docs/upstream/FORK_MAP.md`
