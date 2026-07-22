@@ -17,7 +17,7 @@ Neither workflow reads production secrets. Optional repository **variables**
 | Variable | Purpose | Default |
 | --- | --- | --- |
 | `FOUNDRY_VERSION` | Override for `foundry-rs/foundry-toolchain` (normally unused) | [`.foundry-version`](../.foundry-version) (`v1.7.1`) |
-| `FOUNDRY_ETH_RPC_URL` | Public/archive RPC for the fork workflow only | `https://1rpc.io/eth` |
+| `FOUNDRY_ETH_RPC_URL` | Archive-capable Ethereum RPC for the fork workflow | unset (fork job skips tests) |
 
 ## What `baseline` runs
 
@@ -36,9 +36,11 @@ Neither workflow reads production secrets. Optional repository **variables**
 
 ## What `fork` runs
 
-`node scripts/test-contracts-fork.mjs` against a public Ethereum RPC. Triggered
-on workflow_dispatch, a weekday schedule, and pull requests that touch
-`zFi-main/**` or the fork scripts. It is **not** a required status check.
+`node scripts/test-contracts-fork.mjs` against an **archive-capable** Ethereum
+RPC supplied as repository variable `FOUNDRY_ETH_RPC_URL` (not a secret).
+Triggered only on `workflow_dispatch` and a weekday schedule — **not** on pull
+requests — so public/non-archive RPC gaps cannot mark a PR unstable. If the
+variable is unset, the job succeeds after skipping the fork suites.
 
 ## Branch protection
 
