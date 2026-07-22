@@ -99,6 +99,30 @@ Regenerate (Foundry required):
 node scripts/build-setwise-abi.mjs       # rewrite baseline/abi/setwisePool.json
 node scripts/build-setwise-calldata.mjs  # rewrite baseline/setwise/calldata.json
 forge test                               # in contracts/: data-types + selector compatibility
+```
+
+## Governed Set registry (issue #8)
+
+Each chain has an enumerable `SetwisePoolRegistry` that records permanent pool
+proxy addresses while retaining internal `pool` / `poolId` terminology. The
+registry supports two-step Safe/timelock ownership, a disable-only emergency
+guardian, complete state-change events, and owner-authorized UUPS upgrades. It
+rejects pool implementation addresses so an implementation upgrade does not
+change the registered proxy.
+
+Router adapters must call `requireEnabledPool(pool)` before any approval,
+transfer, Permit2 interaction, or value forwarding. Services and UI can read
+membership, enabled state, governance, and the enumerable proxy list through
+`ISetwisePoolRegistry`.
+
+- [`contracts/src/setwise/SetwisePoolRegistry.sol`](./contracts/src/setwise/SetwisePoolRegistry.sol)
+- [`contracts/src/setwise/ISetwisePoolRegistry.sol`](./contracts/src/setwise/ISetwisePoolRegistry.sol)
+- [`docs/setwise/POOL_REGISTRY.md`](./docs/setwise/POOL_REGISTRY.md)
+
+```bash
+cd contracts && forge test --match-contract SetwisePoolRegistryTest
+```
+
 ## Multi-chain configuration registry
 
 Issue #4 replaces Ethereum-only global constants with a typed registry keyed by
