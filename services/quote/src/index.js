@@ -14,3 +14,14 @@ export {
   validateQuoteRequest,
   validateQuoteResponse,
 } from "./schema.js";
+
+export {
+  ADAPTER_HEALTH_STATUSES,
+  ADAPTER_OUTCOME_STATUSES,
+  DEFAULT_ADAPTER_TIMEOUT_MS,
+  QuoteSourceAdapter,
+  normalizeCapabilities,
+} from "./adapter.js";
+export { MockQuoteAdapter } from "./mock-adapter.js";
+export { QuoteSourceRegistry } from "./registry.js";
+export { runQuoteSources } from "./runner.js";
