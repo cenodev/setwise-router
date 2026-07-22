@@ -36,7 +36,8 @@ test("CI workflows exist and pin action majors", () => {
   assert.match(fork, /continue-on-error:\s*true/);
   assert.match(fork, /test-contracts-fork\.mjs/);
   assert.match(fork, /FOUNDRY_ETH_RPC_URL/);
-  assert.doesNotMatch(fork, /pull_request:/);
+  // Fork must not be a pull_request-triggered workflow (schedule/dispatch only).
+  assert.doesNotMatch(fork, /^ {2}pull_request:/m);
 });
 
 test("CI workflows require no production secrets", () => {
