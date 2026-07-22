@@ -66,6 +66,9 @@ const KIND_SET = new Set(QUOTE_KINDS);
  * @property {object|null} quote             Normalized quote (schema-shaped) or null.
  * @property {Array<object>} evidence        Non-empty structured evidence records.
  * @property {string} [poolId]               Internal Set pool id (Set sources only).
+ * @property {object|null} [transaction]     Executable transaction for firm on-chain
+ *   quotes (schema-shaped `{chainId, to, calldata, value}`); null/absent for
+ *   indicative quotes, which cannot carry an executable transaction.
  */
 
 /**
