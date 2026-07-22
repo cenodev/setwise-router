@@ -32,3 +32,30 @@ export {
 export { MockQuoteAdapter } from "./mock-adapter.js";
 export { QuoteSourceRegistry } from "./registry.js";
 export { runQuoteSources } from "./runner.js";
+
+export {
+  DEFAULT_INDICATIVE_STALE_MS,
+  SetwiseIndicativeAdapter,
+  createAllSetwiseIndicativeAdapters,
+  createSetwiseIndicativeAdapter,
+  createSetwiseIndicativeAdapters,
+  discoverEligiblePools,
+  getPoolById,
+  loadPoolCatalog,
+} from "./setwise-indicative-adapter.js";
+export {
+  MockSetwiseRfqClient,
+  SetwiseRfqClient,
+} from "./setwise-rfq-client.js";
+export {
+  buildSetwiseEvidence,
+  isIndicativeQuoteStale,
+  normalizeIndicativeQuote,
+  resolveRfqAssets,
+} from "./setwise-quote-normalize.js";
+export {
+  normalizePoolRecord,
+  rejectSelfReferentialRoute,
+  validatePoolIdentity,
+  validateSupportedAssets,
+} from "./setwise-pool-catalog.js";
