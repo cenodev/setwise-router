@@ -1,0 +1,73 @@
+{
+  "chainId": 1,
+  "key": "ethereum",
+  "displayName": "Ethereum",
+  "addressesVerified": true,
+  "nativeToken": {
+    "symbol": "ETH",
+    "name": "Ether",
+    "decimals": 18
+  },
+  "wrappedNative": {
+    "symbol": "WETH",
+    "name": "Wrapped Ether",
+    "decimals": 18,
+    "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  },
+  "rpc": {
+    "publicUrl": "https://ethereum-rpc.publicnode.com",
+    "primaryEnv": "RPC_URL_ETHEREUM",
+    "archiveEnv": "RPC_ARCHIVE_URL_ETHEREUM"
+  },
+  "multicall3": "0xcA11bde05977b3631167028862bE2a173976CA11",
+  "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+  "router": null,
+  "quoter": null,
+  "explorer": {
+    "name": "Etherscan",
+    "baseUrl": "https://etherscan.io",
+    "txUrlTemplate": "https://etherscan.io/tx/{hash}",
+    "addressUrlTemplate": "https://etherscan.io/address/{address}"
+  },
+  "venues": {
+    "uniswapV2": {
+      "enabled": true,
+      "factory": "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
+      "initCodeHash": "0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f"
+    },
+    "uniswapV3": {
+      "enabled": true,
+      "factory": "0x1F98431c8aD98523631AE4a59f267346ea31F984"
+    },
+    "uniswapV4": {
+      "enabled": true,
+      "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90"
+    },
+    "sushiswap": {
+      "enabled": true,
+      "factory": "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac"
+    },
+    "pancakeSwap": {
+      "enabled": false
+    },
+    "curve": {
+      "enabled": true
+    },
+    "lido": {
+      "enabled": true
+    },
+    "zamm": {
+      "enabled": true
+    },
+    "setwise": {
+      "enabled": false,
+      "poolRegistry": null,
+      "tokenHub": null
+    }
+  },
+  "aggregators": {
+    "zeroEx": {
+      "enabled": true
+    }
+  }
+}
