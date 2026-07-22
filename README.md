@@ -30,10 +30,41 @@ git submodule update --init --recursive
 Requires [Foundry](https://getfoundry.sh/) on `PATH` for contract builds.
 
 ```bash
-npm test          # provenance + required-layer verification
+npm test          # provenance + ABI/route baseline verification
 npm run lint      # syntax-check verification scripts and ZFi quote service
 npm run typecheck # same surface as lint for this baseline (JS syntax)
 npm run build     # forge build of the untouched zFi-main snapshot
+```
+
+`npm test` includes `test/abi-baseline.test.js`, which fails if the pinned
+submodule's router/quoter ABI or any committed baseline fixture changes
+unexpectedly. The ABI drift check compares the committed fixtures against the
+rebuilt `zFi-main/out` artifacts, so run `npm run build` before `npm test` to
+enable it (it is skipped when artifacts are absent).
+
+## Compatibility baseline
+
+Issue #5 captures what "preserve ZFi functionality" means on Ethereum. The
+baseline lives in [`baseline/`](./baseline) and [`docs/baseline/`](./docs/baseline):
+
+- [`baseline/abi/`](./baseline/abi) — router/quoter ABI fixtures (selectors,
+  signatures, events, errors, bytecode size) and the swap-vs-extension
+  compatibility matrix.
+- [`baseline/routes/calldata.json`](./baseline/routes/calldata.json) —
+  deterministic calldata for representative routes across every venue and shape.
+- [`baseline/routes/execution.json`](./baseline/routes/execution.json) —
+  representative return values, gas, and revert selectors captured on a mainnet
+  fork pinned to block `24880000`.
+- [`docs/baseline/ABI_COMPATIBILITY.md`](./docs/baseline/ABI_COMPATIBILITY.md) —
+  the human-readable matrix and the non-swap extension scope decision.
+
+Regenerate (Foundry required; capture needs an archive Ethereum RPC):
+
+```bash
+npm run build              # forge build the pinned snapshot
+npm run baseline:abi       # rewrite baseline/abi/*.json + ABI_COMPATIBILITY.md
+npm run baseline:routes    # rewrite baseline/routes/calldata.json
+npm run baseline:capture   # rewrite baseline/routes/execution.json from a fork
 ```
 
 ## Terminology
