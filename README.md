@@ -123,6 +123,25 @@ membership, enabled state, governance, and the enumerable proxy list through
 cd contracts && forge test --match-contract SetwisePoolRegistryTest
 ```
 
+## Set Router authorization (issue #10)
+
+`SetwiseRouterAuthorization` verifies an RFQ-issued EIP-712 authorization before
+an adapter can move funds. It binds the current chain and router, pool, funding
+wallet, recipient, assets, native flags, fixed amounts, quote ID, and deadline.
+The signature is checked against the pool's current `QUOTE_SIGNER`, supporting
+both canonical/compact EOA signatures and pass-through Safe-style ERC-1271
+signatures. The pool still verifies its own quote and consumes the shared quote
+ID.
+
+- [`contracts/src/setwise/SetwiseRouterAuthorization.sol`](./contracts/src/setwise/SetwiseRouterAuthorization.sol)
+- [`docs/setwise/ROUTER_AUTHORIZATION.md`](./docs/setwise/ROUTER_AUTHORIZATION.md)
+- [`baseline/setwise/router-authorization.json`](./baseline/setwise/router-authorization.json)
+
+```bash
+cd contracts && forge test --match-contract SetwiseRouterAuthorizationTest
+npm run test --workspace=@setwise-router/quote
+```
+
 ## Multi-chain configuration registry
 
 Issue #4 replaces Ethereum-only global constants with a typed registry keyed by
