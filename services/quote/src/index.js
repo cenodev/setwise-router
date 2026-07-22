@@ -90,3 +90,25 @@ export {
   ZEROEX_CHAIN_IDS,
   ZEROEX_ERROR_CODES,
 } from "./zeroex-adapter.js";
+
+export {
+  ZFI_ERROR_CODES,
+  ZFI_ROUTE_BUILDERS,
+  ZfiQuoteAdapter,
+  createRpcTransport,
+  defaultRoutePolicy,
+} from "./zfi-adapter.js";
+export {
+  MULTICALL3_AGGREGATE3_SELECTOR,
+  decodeAggregate3,
+  decodeAggregate3Calls,
+  decodeQuoterResult,
+  encodeAggregate3,
+  encodeAggregate3Result,
+  encodeQuoterCall,
+  encodeQuoterResult,
+  quoterErrorName,
+  quoterFunction,
+  quoterFunctionNames,
+  quoterSelector,
+} from "./zfi-abi.js";
