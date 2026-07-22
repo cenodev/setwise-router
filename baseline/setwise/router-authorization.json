@@ -1,0 +1,59 @@
+{
+  "schema": "setwise-router/router-authorization@1",
+  "description": "Shared Set Router EIP-712 authorization fixture for contract and RFQ API compatibility tests.",
+  "typedData": {
+    "types": {
+      "EIP712Domain": [
+        { "name": "name", "type": "string" },
+        { "name": "version", "type": "string" },
+        { "name": "chainId", "type": "uint256" },
+        { "name": "verifyingContract", "type": "address" }
+      ],
+      "SetwiseAuthorization": [
+        { "name": "chainId", "type": "uint256" },
+        { "name": "router", "type": "address" },
+        { "name": "pool", "type": "address" },
+        { "name": "funder", "type": "address" },
+        { "name": "recipient", "type": "address" },
+        { "name": "assetIn", "type": "address" },
+        { "name": "assetOut", "type": "address" },
+        { "name": "nativeIn", "type": "bool" },
+        { "name": "nativeOut", "type": "bool" },
+        { "name": "amountIn", "type": "uint256" },
+        { "name": "amountOut", "type": "uint256" },
+        { "name": "quoteId", "type": "bytes32" },
+        { "name": "deadline", "type": "uint256" }
+      ]
+    },
+    "primaryType": "SetwiseAuthorization",
+    "domain": {
+      "name": "SetwiseRouter",
+      "version": "1",
+      "chainId": 56,
+      "verifyingContract": "0x1111111111111111111111111111111111111111"
+    },
+    "message": {
+      "chainId": 56,
+      "router": "0x1111111111111111111111111111111111111111",
+      "pool": "0x5e7151DeF0a13C29CA4d3a16b13B6b4a4d6a3a29",
+      "funder": "0x000000000000000000000000000000000000F00D",
+      "recipient": "0x000000000000000000000000000000000000bEEF",
+      "assetIn": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "assetOut": "0xC02aaA39b223fe8d0A0e5C4F27eAD9083C756Cc2",
+      "nativeIn": false,
+      "nativeOut": false,
+      "amountIn": "1000000000",
+      "amountOut": "500000000000000000",
+      "quoteId": "0x1111111111111111111111111111111111111111111111111111111111111111",
+      "deadline": "1893456000"
+    }
+  },
+  "expected": {
+    "authorizationTypehash": "0xdb214515455e435a629caeea5e43ce9fb3a46d7eff051638240c82e84a1ea858",
+    "domainSeparator": "0x35c0fe3c358be28b480dfab4bd711e8113f3cfad950222d5195c49706f7a32c7",
+    "structHash": "0x30a4b75901f50a5d52d370bff812baae7a252b0e53d926f3e3a727e02826b259",
+    "digest": "0x2067286227ad59c5de37a15875b3c14fa5cabd4e1ad64fd1b0b558ebf56ee7e4",
+    "signer": "0xe05fcC23807536bEe418f142D19fa0d21BB0cfF7",
+    "signature": "0x6478204c80bd51499df3f0f79e5552b0030e6225651894e38c21d837ca6078110e6cc222f0918e745ecad54828f56b92b8de63a76deefdb1498f4f9320eda4661c"
+  }
+}

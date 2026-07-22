@@ -8,6 +8,7 @@ solc_version = "0.8.28"
 evm_version = "cancun"
 optimizer = true
 optimizer_runs = 200
+fs_permissions = [{ access = "read", path = "../baseline/setwise" }]
 
 [profile.default.fuzz]
 runs = 256
