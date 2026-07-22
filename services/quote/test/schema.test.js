@@ -1,14 +1,27 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import {
+  QUOTE_API_VERSION,
   QUOTE_ERROR_CODES,
+  QUOTE_KINDS,
+  QUOTE_MODES,
+  QUOTE_SOURCE_STATUSES,
+  QUOTE_SOURCE_TYPES,
   QuoteSchemaError,
   quoteErrorResponse,
   validateQuoteError,
   validateQuoteRequest,
   validateQuoteResponse,
 } from "../src/index.js";
+
+const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+const repositoryRoot = join(packageRoot, "../..");
+const fixture = (name) =>
+  JSON.parse(readFileSync(join(packageRoot, "fixtures/v1", name), "utf8"));
 
 const address = (suffix) => `0x${suffix.padStart(40, "0")}`;
 const scoped = (chainId, suffix) => ({ chainId, address: address(suffix) });
@@ -268,4 +281,35 @@ test("serializes schema failures into the stable v1 error envelope", () => {
   const envelope = quoteErrorResponse(error);
   assert.equal(envelope.error.code, QUOTE_ERROR_CODES.UNSUPPORTED_API_VERSION);
   assert.equal(validateQuoteError(envelope), envelope);
+});
+
+test("committed v1 request and response fixtures validate", () => {
+  const exactInput = fixture("exact-input.request.json");
+  const exactOutput = fixture("exact-output.request.json");
+  validateQuoteRequest(exactInput);
+  validateQuoteRequest(exactOutput);
+  validateQuoteResponse(fixture("indicative.response.json"), exactInput);
+  validateQuoteResponse(fixture("firm.response.json"), exactInput);
+  validateQuoteResponse(fixture("source-states.response.json"), exactInput);
+  validateQuoteError(fixture("error.response.json"));
+});
+
+test("OpenAPI v1 enums and error codes stay aligned with runtime validation", () => {
+  const api = JSON.parse(
+    readFileSync(join(repositoryRoot, "docs/api/quote-v1.openapi.json"), "utf8"),
+  );
+  const schemas = api.components.schemas;
+  assert.equal(api.openapi, "3.1.0");
+  assert.equal(schemas.ApiVersion.const, QUOTE_API_VERSION);
+  assert.deepEqual(schemas.QuoteRequest.properties.mode.enum, [...QUOTE_MODES]);
+  assert.deepEqual(schemas.QuoteResponse.properties.kind.enum, [...QUOTE_KINDS]);
+  assert.deepEqual(schemas.Source.properties.type.enum, [...QUOTE_SOURCE_TYPES]);
+  assert.deepEqual(
+    schemas.SourceOutcome.properties.status.enum,
+    [...QUOTE_SOURCE_STATUSES],
+  );
+  assert.deepEqual(
+    schemas.ErrorResponse.properties.error.properties.code.enum,
+    Object.values(QUOTE_ERROR_CODES),
+  );
 });
