@@ -69,6 +69,9 @@ jobs:
       - name: Build config registry outputs
         run: npm run build:config
 
+      - name: Verify deployment manifests (secret-free)
+        run: npm run verify:deployments
+
       - name: Build services
         run: npm run build:services
 
