@@ -13,6 +13,9 @@ const dirs = [
   "config",
   "services/quote/src",
   "services/quote/test",
+  "app/src",
+  "app/scripts",
+  "app/test",
 ];
 let failed = false;
 

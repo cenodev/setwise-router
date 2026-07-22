@@ -63,8 +63,8 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Unit tests (workspace + services)
-        run: npm test && npm run test:services
+      - name: Unit tests (workspace + services + app)
+        run: npm test && npm run test:services && npm run test:app
 
       - name: Build config registry outputs
         run: npm run build:config
