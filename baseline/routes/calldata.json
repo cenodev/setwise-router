@@ -1,0 +1,927 @@
+{
+  "schema": "setwise-router/route-calldata@1",
+  "upstream": {
+    "repository": "https://github.com/z-fi/zFi",
+    "commit": "43ac1e67388cc4f96be6b2cbeb0f95f647c9aeb3"
+  },
+  "targets": {
+    "zRouter": "0x000000000000FB114709235f1ccBFfb925F600e4",
+    "zQuoter": "stateless; deployed fresh per fork (see baseline/fork)"
+  },
+  "notes": "Deterministic calldata for representative Ethereum routes, encoded from the pinned ABI via `cast calldata`. Regenerate with scripts/build-route-fixtures.mjs. test/abi-baseline.test.js re-encodes each entry and fails on any drift.",
+  "routes": [
+    {
+      "id": "router-swapV2-eth-to-dai-exact-in",
+      "contract": "zRouter",
+      "description": "Exact-in ETH -> DAI on Uniswap V2 (explicit deadline).",
+      "venue": "UNI_V2",
+      "shape": "single-hop",
+      "function": "swapV2",
+      "signature": "swapV2(address,bool,address,address,uint256,uint256,uint256)",
+      "selector": "0x6e0a4f98",
+      "args": [
+        {
+          "name": "to",
+          "type": "address",
+          "value": "0x000000000000000000000000000000000000bEEF"
+        },
+        {
+          "name": "exactOut",
+          "type": "bool",
+          "value": "false"
+        },
+        {
+          "name": "tokenIn",
+          "type": "address",
+          "value": "0x0000000000000000000000000000000000000000"
+        },
+        {
+          "name": "tokenOut",
+          "type": "address",
+          "value": "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+        },
+        {
+          "name": "swapAmount",
+          "type": "uint256",
+          "value": "1000000000000000000"
+        },
+        {
+          "name": "amountLimit",
+          "type": "uint256",
+          "value": "0"
+        },
+        {
+          "name": "deadline",
+          "type": "uint256",
+          "value": "1893456000"
+        }
+      ],
+      "calldata": "0x6e0a4f98000000000000000000000000000000000000000000000000000000000000beef000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006b175474e89094c44da98b954eedeac495271d0f0000000000000000000000000000000000000000000000000de0b6b3a764000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000070dbd880"
+    },
+    {
+      "id": "router-swapV2-usdc-to-usdt-sushi-sentinel",
+      "contract": "zRouter",
+      "description": "Exact-in USDC -> USDT routed to SushiSwap via the deadline == type(uint256).max sentinel.",
+      "venue": "SUSHI",
+      "shape": "single-hop",
+      "function": "swapV2",
+      "signature": "swapV2(address,bool,address,address,uint256,uint256,uint256)",
+      "selector": "0x6e0a4f98",
+      "args": [
+        {
+          "name": "to",
+          "type": "address",
+          "value": "0x000000000000000000000000000000000000bEEF"
+        },
+        {
+          "name": "exactOut",
+          "type": "bool",
+          "value": "false"
+        },
+        {
+          "name": "tokenIn",
+          "type": "address",
+          "value": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+        },
+        {
+          "name": "tokenOut",
+          "type": "address",
+          "value": "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+        },
+        {
+          "name": "swapAmount",
+          "type": "uint256",
+          "value": "1000000000"
+        },
+        {
+          "name": "amountLimit",
+          "type": "uint256",
+          "value": "0"
+        },
+        {
+          "name": "deadline",
+          "type": "uint256",
+          "value": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+        }
+      ],
+      "calldata": "0x6e0a4f98000000000000000000000000000000000000000000000000000000000000beef0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec7000000000000000000000000000000000000000000000000000000003b9aca000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    },
+    {
+      "id": "router-swapV2-dai-to-eth-exact-out",
+      "contract": "zRouter",
+      "description": "Exact-out DAI -> ETH (swapAmount is the desired ETH out; amountLimit caps input).",
+      "venue": "UNI_V2",
+      "shape": "single-hop",
+      "function": "swapV2",
+      "signature": "swapV2(address,bool,address,address,uint256,uint256,uint256)",
+      "selector": "0x6e0a4f98",
+      "args": [
+        {
+          "name": "to",
+          "type": "address",
+          "value": "0x000000000000000000000000000000000000bEEF"
+        },
+        {
+          "name": "exactOut",
+          "type": "bool",
+          "value": "true"
+        },
+        {
+          "name": "tokenIn",
+          "type": "address",
+          "value": "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+        },
+        {
+          "name": "tokenOut",
+          "type": "address",
+          "value": "0x0000000000000000000000000000000000000000"
+        },
+        {
+          "name": "swapAmount",
+          "type": "uint256",
+          "value": "1000000000000000000"
+        },
+        {
+          "name": "amountLimit",
+          "type": "uint256",
+          "value": "5000000000000000000000"
+        },
+        {
+          "name": "deadline",
+          "type": "uint256",
+          "value": "1893456000"
+        }
+      ],
+      "calldata": "0x6e0a4f98000000000000000000000000000000000000000000000000000000000000beef00000000000000000000000000000000000000000000000000000000000000010000000000000000000000006b175474e89094c44da98b954eedeac495271d0f00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000de0b6b3a764000000000000000000000000000000000000000000000000010f0cf064dd592000000000000000000000000000000000000000000000000000000000000070dbd880"
+    },
+    {
+      "id": "router-swapV3-usdc-to-weth-exact-in",
+      "contract": "zRouter",
+      "description": "Exact-in USDC -> WETH on Uniswap V3, 0.30% fee tier.",
+      "venue": "UNI_V3",
+      "shape": "single-hop",
+      "function": "swapV3",
+      "signature": "swapV3(address,bool,uint24,address,address,uint256,uint256,uint256)",
+      "selector": "0xafeae12b",
+      "args": [
+        {
+          "name": "to",
+          "type": "address",
+          "value": "0x000000000000000000000000000000000000bEEF"
+        },
+        {
+          "name": "exactOut",
+          "type": "bool",
+          "value": "false"
+        },
+        {
+          "name": "swapFee",
+          "type": "uint24",
+          "value": "3000"
+        },
+        {
+          "name": "tokenIn",
+          "type": "address",
+          "value": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+        },
+        {
+          "name": "tokenOut",
+          "type": "address",
+          "value": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+        },
+        {
+          "name": "swapAmount",
+          "type": "uint256",
+          "value": "1000000000"
+        },
+        {
+          "name": "amountLimit",
+          "type": "uint256",
+          "value": "0"
+        },
+        {
+          "name": "deadline",
+          "type": "uint256",
+          "value": "1893456000"
+        }
+      ],
+      "calldata": "0xafeae12b000000000000000000000000000000000000000000000000000000000000beef00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000bb8000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000000000000000000000000000000000003b9aca0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000070dbd880"
+    },
+    {
+      "id": "router-swapV4-weth-to-usdc-exact-in",
+      "contract": "zRouter",
+      "description": "Exact-in WETH -> USDC on Uniswap V4, 0.05% fee tier, tick spacing 10.",
+      "venue": "UNI_V4",
+      "shape": "single-hop",
+      "function": "swapV4",
+      "signature": "swapV4(address,bool,uint24,int24,address,address,uint256,uint256,uint256)",
+      "selector": "0x21c0dad2",
+      "args": [
+        {
+          "name": "to",
+          "type": "address",
+          "value": "0x000000000000000000000000000000000000bEEF"
+        },
+        {
+          "name": "exactOut",
+          "type": "bool",
+          "value": "false"
+        },
+        {
+          "name": "swapFee",
+          "type": "uint24",
+          "value": "500"
+        },
+        {
+          "name": "tickSpace",
+          "type": "int24",
+          "value": "10"
+        },
+        {
+          "name": "tokenIn",
+          "type": "address",
+          "value": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+        },
+        {
+          "name": "tokenOut",
+          "type": "address",
+          "value": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+        },
+        {
+          "name": "swapAmount",
+          "type": "uint256",
+          "value": "1000000000000000000"
+        },
+        {
+          "name": "amountLimit",
+          "type": "uint256",
+          "value": "0"
+        },
+        {
+          "name": "deadline",
+          "type": "uint256",
+          "value": "1893456000"
+        }
+      ],
+      "calldata": "0x21c0dad2000000000000000000000000000000000000000000000000000000000000beef000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001f4000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb480000000000000000000000000000000000000000000000000de0b6b3a764000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000070dbd880"
+    },
+    {
+      "id": "router-swapVZ-usdc-to-usdt-exact-in",
+      "contract": "zRouter",
+      "description": "Exact-in USDC -> USDT on a zAMM precision pool using ERC-20 ids (idIn == idOut == 0).",
+      "venue": "ZAMM",
+      "shape": "single-hop",
+      "function": "swapVZ",
+      "signature": "swapVZ(address,bool,uint256,address,address,uint256,uint256,uint256,uint256,uint256)",
+      "selector": "0x9d5b5af8",
+      "args": [
+        {
+          "name": "to",
+          "type": "address",
+          "value": "0x000000000000000000000000000000000000bEEF"
+        },
+        {
+          "name": "exactOut",
+          "type": "bool",
+          "value": "false"
+        },
+        {
+          "name": "feeOrHook",
+          "type": "uint256",
+          "value": "3000"
+        },
+        {
+          "name": "tokenIn",
+          "type": "address",
+          "value": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+        },
+        {
+          "name": "tokenOut",
+          "type": "address",
+          "value": "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+        },
+        {
+          "name": "idIn",
+          "type": "uint256",
+          "value": "0"
+        },
+        {
+          "name": "idOut",
+          "type": "uint256",
+          "value": "0"
+        },
+        {
+          "name": "swapAmount",
+          "type": "uint256",
+          "value": "1000000000"
+        },
+        {
+          "name": "amountLimit",
+          "type": "uint256",
+          "value": "0"
+        },
+        {
+          "name": "deadline",
+          "type": "uint256",
+          "value": "1893456000"
+        }
+      ],
+      "calldata": "0x9d5b5af8000000000000000000000000000000000000000000000000000000000000beef00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000bb8000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003b9aca0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000070dbd880"
+    },
+    {
+      "id": "router-swapCurve-usdc-to-usdt-exact-in",
+      "contract": "zRouter",
+      "description": "Exact-in USDC -> USDT single-hop Curve stable swap (representative route/param encoding).",
+      "venue": "CURVE",
+      "shape": "single-hop",
+      "function": "swapCurve",
+      "signature": "swapCurve(address,bool,address[11],uint256[4][5],address[5],uint256,uint256,uint256)",
+      "selector": "0x12db224a",
+      "args": [
+        {
+          "name": "to",
+          "type": "address",
+          "value": "0x000000000000000000000000000000000000bEEF"
+        },
+        {
+          "name": "exactOut",
+          "type": "bool",
+          "value": "false"
+        },
+        {
+          "name": "route",
+          "type": "address[11]",
+          "value": "[0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48,0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7,0xdAC17F958D2ee523a2206206994597C13D831ec7,0x0000000000000000000000000000000000000000,0x0000000000000000000000000000000000000000,0x0000000000000000000000000000000000000000,0x0000000000000000000000000000000000000000,0x0000000000000000000000000000000000000000,0x0000000000000000000000000000000000000000,0x0000000000000000000000000000000000000000,0x0000000000000000000000000000000000000000]"
+        },
+        {
+          "name": "swapParams",
+          "type": "uint256[4][5]",
+          "value": "[[0,1,1,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]"
+        },
+        {
+          "name": "basePools",
+          "type": "address[5]",
+          "value": "[0x0000000000000000000000000000000000000000,0x0000000000000000000000000000000000000000,0x0000000000000000000000000000000000000000,0x0000000000000000000000000000000000000000,0x0000000000000000000000000000000000000000]"
+        },
+        {
+          "name": "swapAmount",
+          "type": "uint256",
+          "value": "1000000000"
+        },
+        {
+          "name": "amountLimit",
+          "type": "uint256",
+          "value": "0"
+        },
+        {
+          "name": "deadline",
+          "type": "uint256",
+          "value": "1893456000"
+        }
+      ],
+      "calldata": "0x12db224a000000000000000000000000000000000000000000000000000000000000beef0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48000000000000000000000000bebc44782c7db0a1a60cb6fe97d0b483032ff1c7000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003b9aca0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000070dbd880"
+    },
+    {
+      "id": "router-snwap-usdc-to-weth-executor",
+      "contract": "zRouter",
+      "description": "Generic executor swap USDC -> WETH (e.g. Bitgetol forwarder) via safeExecutor.",
+      "venue": "EXECUTOR",
+      "shape": "single-hop",
+      "function": "snwap",
+      "signature": "snwap(address,uint256,address,address,uint256,address,bytes)",
+      "selector": "0x5f3bd1c8",
+      "args": [
+        {
+          "name": "tokenIn",
+          "type": "address",
+          "value": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+        },
+        {
+          "name": "amountIn",
+          "type": "uint256",
+          "value": "1000000000"
+        },
+        {
+          "name": "recipient",
+          "type": "address",
+          "value": "0x000000000000000000000000000000000000bEEF"
+        },
+        {
+          "name": "tokenOut",
+          "type": "address",
+          "value": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+        },
+        {
+          "name": "amountOutMin",
+          "type": "uint256",
+          "value": "0"
+        },
+        {
+          "name": "executor",
+          "type": "address",
+          "value": "0xBc1D9760bd6ca468CA9fB5Ff2CFbEAC35d86c973"
+        },
+        {
+          "name": "executorData",
+          "type": "bytes",
+          "value": "0x"
+        }
+      ],
+      "calldata": "0x5f3bd1c8000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48000000000000000000000000000000000000000000000000000000003b9aca00000000000000000000000000000000000000000000000000000000000000beef000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000000000000000000000000000000000000000000000000000000000000000000000bc1d9760bd6ca468ca9fb5ff2cfbeac35d86c97300000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "id": "router-wrap-eth",
+      "contract": "zRouter",
+      "description": "Wrap 1 ETH into WETH.",
+      "venue": "WETH_WRAP",
+      "shape": "single-hop",
+      "function": "wrap",
+      "signature": "wrap(uint256)",
+      "selector": "0xea598cb0",
+      "args": [
+        {
+          "name": "amount",
+          "type": "uint256",
+          "value": "1000000000000000000"
+        }
+      ],
+      "calldata": "0xea598cb00000000000000000000000000000000000000000000000000de0b6b3a7640000"
+    },
+    {
+      "id": "router-unwrap-weth",
+      "contract": "zRouter",
+      "description": "Unwrap 1 WETH into ETH.",
+      "venue": "WETH_WRAP",
+      "shape": "single-hop",
+      "function": "unwrap",
+      "signature": "unwrap(uint256)",
+      "selector": "0xde0e9a3e",
+      "args": [
+        {
+          "name": "amount",
+          "type": "uint256",
+          "value": "1000000000000000000"
+        }
+      ],
+      "calldata": "0xde0e9a3e0000000000000000000000000000000000000000000000000de0b6b3a7640000"
+    },
+    {
+      "id": "router-revealName-extension",
+      "contract": "zRouter",
+      "description": "NameNFT .wei reveal (Ethereum-only extension); chained after a swap via multicall.",
+      "venue": "—",
+      "shape": "extension",
+      "function": "revealName",
+      "signature": "revealName(string,bytes32,address)",
+      "selector": "0x2cb9f974",
+      "args": [
+        {
+          "name": "label",
+          "type": "string",
+          "value": "\"setwise\""
+        },
+        {
+          "name": "innerSecret",
+          "type": "bytes32",
+          "value": "0x1111111111111111111111111111111111111111111111111111111111111111"
+        },
+        {
+          "name": "to",
+          "type": "address",
+          "value": "0x000000000000000000000000000000000000bEEF"
+        }
+      ],
+      "calldata": "0x2cb9f97400000000000000000000000000000000000000000000000000000000000000601111111111111111111111111111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000beef00000000000000000000000000000000000000000000000000000000000000077365747769736500000000000000000000000000000000000000000000000000"
+    },
+    {
+      "id": "router-addLiquidity-extension",
+      "contract": "zRouter",
+      "description": "zAMM liquidity mint (not a swap); poolKey tuple encoding preserved for parity.",
+      "venue": "ZAMM",
+      "shape": "extension",
+      "function": "addLiquidity",
+      "signature": "addLiquidity((uint256,uint256,address,address,uint256),uint256,uint256,uint256,uint256,address,uint256)",
+      "selector": "0xc42957a8",
+      "args": [
+        {
+          "name": "poolKey",
+          "type": "tuple",
+          "value": "(0,0,0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48,0xdAC17F958D2ee523a2206206994597C13D831ec7,3000)"
+        },
+        {
+          "name": "amount0Desired",
+          "type": "uint256",
+          "value": "1000000000"
+        },
+        {
+          "name": "amount1Desired",
+          "type": "uint256",
+          "value": "1000000000"
+        },
+        {
+          "name": "amount0Min",
+          "type": "uint256",
+          "value": "0"
+        },
+        {
+          "name": "amount1Min",
+          "type": "uint256",
+          "value": "0"
+        },
+        {
+          "name": "to",
+          "type": "address",
+          "value": "0x000000000000000000000000000000000000bEEF"
+        },
+        {
+          "name": "deadline",
+          "type": "uint256",
+          "value": "1893456000"
+        }
+      ],
+      "calldata": "0xc42957a800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec70000000000000000000000000000000000000000000000000000000000000bb8000000000000000000000000000000000000000000000000000000003b9aca00000000000000000000000000000000000000000000000000000000003b9aca0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000beef0000000000000000000000000000000000000000000000000000000070dbd880"
+    },
+    {
+      "id": "quoter-getQuotes-eth-to-dai",
+      "contract": "zQuoter",
+      "description": "All-venue exact-in quote discovery ETH -> DAI.",
+      "venue": "ALL",
+      "shape": "discovery",
+      "function": "getQuotes",
+      "signature": "getQuotes(bool,address,address,uint256)",
+      "selector": "0xe1fd10bc",
+      "args": [
+        {
+          "name": "exactOut",
+          "type": "bool",
+          "value": "false"
+        },
+        {
+          "name": "tokenIn",
+          "type": "address",
+          "value": "0x0000000000000000000000000000000000000000"
+        },
+        {
+          "name": "tokenOut",
+          "type": "address",
+          "value": "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+        },
+        {
+          "name": "swapAmount",
+          "type": "uint256",
+          "value": "1000000000000000000"
+        }
+      ],
+      "calldata": "0xe1fd10bc000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006b175474e89094c44da98b954eedeac495271d0f0000000000000000000000000000000000000000000000000de0b6b3a7640000"
+    },
+    {
+      "id": "quoter-buildBestSwap-eth-to-wbtc",
+      "contract": "zQuoter",
+      "description": "Best single-hop exact-in route ETH -> WBTC.",
+      "venue": "ALL",
+      "shape": "single-hop",
+      "function": "buildBestSwap",
+      "signature": "buildBestSwap(address,bool,address,address,uint256,uint256,uint256)",
+      "selector": "0xe7798987",
+      "args": [
+        {
+          "name": "to",
+          "type": "address",
+          "value": "0x000000000000000000000000000000000000bEEF"
+        },
+        {
+          "name": "exactOut",
+          "type": "bool",
+          "value": "false"
+        },
+        {
+          "name": "tokenIn",
+          "type": "address",
+          "value": "0x0000000000000000000000000000000000000000"
+        },
+        {
+          "name": "tokenOut",
+          "type": "address",
+          "value": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+        },
+        {
+          "name": "swapAmount",
+          "type": "uint256",
+          "value": "10000000000000000000"
+        },
+        {
+          "name": "slippageBps",
+          "type": "uint256",
+          "value": "100"
+        },
+        {
+          "name": "deadline",
+          "type": "uint256",
+          "value": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+        }
+      ],
+      "calldata": "0xe7798987000000000000000000000000000000000000000000000000000000000000beef000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c5990000000000000000000000000000000000000000000000008ac7230489e800000000000000000000000000000000000000000000000000000000000000000064ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    },
+    {
+      "id": "quoter-buildBestSwapViaETHMulticall-eth-to-wsteth",
+      "contract": "zQuoter",
+      "description": "Best of single-hop vs 2-hop hub route ETH -> wstETH.",
+      "venue": "ALL",
+      "shape": "two-hop-hub",
+      "function": "buildBestSwapViaETHMulticall",
+      "signature": "buildBestSwapViaETHMulticall(address,address,bool,address,address,uint256,uint256,uint256)",
+      "selector": "0xe453166e",
+      "args": [
+        {
+          "name": "to",
+          "type": "address",
+          "value": "0x000000000000000000000000000000000000bEEF"
+        },
+        {
+          "name": "refundTo",
+          "type": "address",
+          "value": "0x000000000000000000000000000000000000bEEF"
+        },
+        {
+          "name": "exactOut",
+          "type": "bool",
+          "value": "false"
+        },
+        {
+          "name": "tokenIn",
+          "type": "address",
+          "value": "0x0000000000000000000000000000000000000000"
+        },
+        {
+          "name": "tokenOut",
+          "type": "address",
+          "value": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0"
+        },
+        {
+          "name": "swapAmount",
+          "type": "uint256",
+          "value": "1000000000000000000"
+        },
+        {
+          "name": "slippageBps",
+          "type": "uint256",
+          "value": "100"
+        },
+        {
+          "name": "deadline",
+          "type": "uint256",
+          "value": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+        }
+      ],
+      "calldata": "0xe453166e000000000000000000000000000000000000000000000000000000000000beef000000000000000000000000000000000000000000000000000000000000beef000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007f39c581f595b53c5cb19bd0b3f8da6c935e2ca00000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000064ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    },
+    {
+      "id": "quoter-build3HopMulticall-usdt-to-wbtc",
+      "contract": "zQuoter",
+      "description": "3-hop exact-in route USDT -> WBTC over two hub intermediates.",
+      "venue": "ALL",
+      "shape": "three-hop",
+      "function": "build3HopMulticall",
+      "signature": "build3HopMulticall(address,bool,address,address,uint256,uint256,uint256)",
+      "selector": "0x4c464f59",
+      "args": [
+        {
+          "name": "to",
+          "type": "address",
+          "value": "0x000000000000000000000000000000000000bEEF"
+        },
+        {
+          "name": "exactOut",
+          "type": "bool",
+          "value": "false"
+        },
+        {
+          "name": "tokenIn",
+          "type": "address",
+          "value": "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+        },
+        {
+          "name": "tokenOut",
+          "type": "address",
+          "value": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+        },
+        {
+          "name": "swapAmount",
+          "type": "uint256",
+          "value": "1000000000"
+        },
+        {
+          "name": "slippageBps",
+          "type": "uint256",
+          "value": "100"
+        },
+        {
+          "name": "deadline",
+          "type": "uint256",
+          "value": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+        }
+      ],
+      "calldata": "0x4c464f59000000000000000000000000000000000000000000000000000000000000beef0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec70000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599000000000000000000000000000000000000000000000000000000003b9aca000000000000000000000000000000000000000000000000000000000000000064ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    },
+    {
+      "id": "quoter-buildSplitSwap-usdc-to-usdt",
+      "contract": "zQuoter",
+      "description": "Exact-in split USDC -> USDT across the top two venues.",
+      "venue": "ALL",
+      "shape": "split",
+      "function": "buildSplitSwap",
+      "signature": "buildSplitSwap(address,address,address,uint256,uint256,uint256)",
+      "selector": "0x892af013",
+      "args": [
+        {
+          "name": "to",
+          "type": "address",
+          "value": "0x000000000000000000000000000000000000bEEF"
+        },
+        {
+          "name": "tokenIn",
+          "type": "address",
+          "value": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+        },
+        {
+          "name": "tokenOut",
+          "type": "address",
+          "value": "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+        },
+        {
+          "name": "swapAmount",
+          "type": "uint256",
+          "value": "1000000000"
+        },
+        {
+          "name": "slippageBps",
+          "type": "uint256",
+          "value": "100"
+        },
+        {
+          "name": "deadline",
+          "type": "uint256",
+          "value": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+        }
+      ],
+      "calldata": "0x892af013000000000000000000000000000000000000000000000000000000000000beef000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec7000000000000000000000000000000000000000000000000000000003b9aca000000000000000000000000000000000000000000000000000000000000000064ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    },
+    {
+      "id": "quoter-buildHybridSplit-eth-to-usdt",
+      "contract": "zQuoter",
+      "description": "Exact-in hybrid split ETH -> USDT (best direct vs best 2-hop).",
+      "venue": "ALL",
+      "shape": "hybrid-split",
+      "function": "buildHybridSplit",
+      "signature": "buildHybridSplit(address,address,address,uint256,uint256,uint256)",
+      "selector": "0x85f86a90",
+      "args": [
+        {
+          "name": "to",
+          "type": "address",
+          "value": "0x000000000000000000000000000000000000bEEF"
+        },
+        {
+          "name": "tokenIn",
+          "type": "address",
+          "value": "0x0000000000000000000000000000000000000000"
+        },
+        {
+          "name": "tokenOut",
+          "type": "address",
+          "value": "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+        },
+        {
+          "name": "swapAmount",
+          "type": "uint256",
+          "value": "50000000000000000000"
+        },
+        {
+          "name": "slippageBps",
+          "type": "uint256",
+          "value": "100"
+        },
+        {
+          "name": "deadline",
+          "type": "uint256",
+          "value": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+        }
+      ],
+      "calldata": "0x85f86a90000000000000000000000000000000000000000000000000000000000000beef0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec7000000000000000000000000000000000000000000000002b5e3af16b18800000000000000000000000000000000000000000000000000000000000000000064ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    },
+    {
+      "id": "quoter-buildSwapAuto-eth-to-dai",
+      "contract": "zQuoter",
+      "description": "Auto cascade (2-hop then 3-hop) ETH -> DAI.",
+      "venue": "ALL",
+      "shape": "auto",
+      "function": "buildSwapAuto",
+      "signature": "buildSwapAuto(address,bool,address,address,uint256,uint256,uint256)",
+      "selector": "0x98d7d292",
+      "args": [
+        {
+          "name": "to",
+          "type": "address",
+          "value": "0x000000000000000000000000000000000000bEEF"
+        },
+        {
+          "name": "exactOut",
+          "type": "bool",
+          "value": "false"
+        },
+        {
+          "name": "tokenIn",
+          "type": "address",
+          "value": "0x0000000000000000000000000000000000000000"
+        },
+        {
+          "name": "tokenOut",
+          "type": "address",
+          "value": "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+        },
+        {
+          "name": "swapAmount",
+          "type": "uint256",
+          "value": "1000000000000000000"
+        },
+        {
+          "name": "slippageBps",
+          "type": "uint256",
+          "value": "100"
+        },
+        {
+          "name": "deadline",
+          "type": "uint256",
+          "value": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+        }
+      ],
+      "calldata": "0x98d7d292000000000000000000000000000000000000000000000000000000000000beef000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006b175474e89094c44da98b954eedeac495271d0f0000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000064ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    },
+    {
+      "id": "quoter-quoteCurve-usdc-to-usdt",
+      "contract": "zQuoter",
+      "description": "Single-hop Curve quote USDC -> USDT.",
+      "venue": "CURVE",
+      "shape": "single-hop",
+      "function": "quoteCurve",
+      "signature": "quoteCurve(bool,address,address,uint256,uint256)",
+      "selector": "0xfdfd58fb",
+      "args": [
+        {
+          "name": "exactOut",
+          "type": "bool",
+          "value": "false"
+        },
+        {
+          "name": "tokenIn",
+          "type": "address",
+          "value": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+        },
+        {
+          "name": "tokenOut",
+          "type": "address",
+          "value": "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+        },
+        {
+          "name": "swapAmount",
+          "type": "uint256",
+          "value": "1000000000"
+        },
+        {
+          "name": "maxCandidates",
+          "type": "uint256",
+          "value": "8"
+        }
+      ],
+      "calldata": "0xfdfd58fb0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec7000000000000000000000000000000000000000000000000000000003b9aca000000000000000000000000000000000000000000000000000000000000000008"
+    },
+    {
+      "id": "quoter-quoteLido-eth-to-wsteth",
+      "contract": "zQuoter",
+      "description": "Lido exact-in quote ETH -> wstETH (Ethereum-only).",
+      "venue": "LIDO",
+      "shape": "single-hop",
+      "function": "quoteLido",
+      "signature": "quoteLido(bool,address,uint256)",
+      "selector": "0x61bcd9b0",
+      "args": [
+        {
+          "name": "exactOut",
+          "type": "bool",
+          "value": "false"
+        },
+        {
+          "name": "tokenOut",
+          "type": "address",
+          "value": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0"
+        },
+        {
+          "name": "swapAmount",
+          "type": "uint256",
+          "value": "1000000000000000000"
+        }
+      ],
+      "calldata": "0x61bcd9b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007f39c581f595b53c5cb19bd0b3f8da6c935e2ca00000000000000000000000000000000000000000000000000de0b6b3a7640000"
+    }
+  ]
+}

@@ -8,6 +8,12 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const files = [
   "scripts/build-zfi-baseline.mjs",
   "scripts/syntax-check.mjs",
+  "scripts/build-abi-baseline.mjs",
+  "scripts/build-abi-docs.mjs",
+  "scripts/build-route-fixtures.mjs",
+  "scripts/capture-execution-fixtures.mjs",
+  "test/provenance.test.js",
+  "test/abi-baseline.test.js",
   "scripts/format-check.mjs",
   "scripts/clean.mjs",
   "test/provenance.test.js",

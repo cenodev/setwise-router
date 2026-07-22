@@ -12,6 +12,7 @@
     "app"
   ],
   "scripts": {
+    "test": "node --test test/*.test.js",
     "build": "npm run build:contracts && npm run build:services",
     "build:contracts": "node scripts/build-zfi-baseline.mjs",
     "build:services": "npm run build --workspace=@setwise-router/app",
@@ -21,6 +22,10 @@
     "lint": "node scripts/syntax-check.mjs",
     "lint:services": "npm run lint --workspace=@setwise-router/quote",
     "typecheck": "node scripts/syntax-check.mjs",
+    "build": "node scripts/build-zfi-baseline.mjs",
+    "baseline:abi": "node scripts/build-abi-baseline.mjs && node scripts/build-abi-docs.mjs",
+    "baseline:routes": "node scripts/build-route-fixtures.mjs",
+    "baseline:capture": "node scripts/capture-execution-fixtures.mjs"
     "format": "node scripts/format-check.mjs",
     "format:fix": "node scripts/format-check.mjs --fix",
     "clean": "node scripts/clean.mjs",

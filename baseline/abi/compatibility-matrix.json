@@ -1,0 +1,256 @@
+{
+  "schema": "setwise-router/abi-compatibility-matrix@1",
+  "upstream": {
+    "repository": "https://github.com/z-fi/zFi",
+    "commit": "43ac1e67388cc4f96be6b2cbeb0f95f647c9aeb3",
+    "localPath": "zFi-main"
+  },
+  "contracts": {
+    "zRouter": {
+      "source": "zFi-main/src/zRouter.sol",
+      "deployedBytecodeSize": 24524,
+      "deployedBytecodeHash": "0x8cad44c4aebf185e38e4f77e19dc4d480f9028eb91380295803a21bcf15d1a76",
+      "functionCount": 29,
+      "eventCount": 1,
+      "errorCount": 10,
+      "scope": {
+        "byScope": {
+          "core-swap": [
+            "snwap",
+            "snwapMulti",
+            "swapCurve",
+            "swapV2",
+            "swapV3",
+            "swapV4",
+            "swapVZ"
+          ],
+          "swap-support": [
+            "deposit",
+            "ensureAllowance",
+            "ethToExactSTETH",
+            "ethToExactWSTETH",
+            "exactETHToSTETH",
+            "exactETHToWSTETH",
+            "execute",
+            "multicall",
+            "permit",
+            "permit2BatchTransferFrom",
+            "permit2TransferFrom",
+            "permitDAI",
+            "safeExecutor",
+            "sweep",
+            "trust",
+            "unlockCallback",
+            "unwrap",
+            "wrap"
+          ],
+          "extension": [
+            "addLiquidity",
+            "onERC721Received",
+            "revealName",
+            "transferOwnership"
+          ]
+        },
+        "ethereumOnly": [
+          "ethToExactSTETH",
+          "ethToExactWSTETH",
+          "exactETHToSTETH",
+          "exactETHToWSTETH",
+          "revealName"
+        ]
+      }
+    },
+    "zQuoter": {
+      "source": "zFi-main/src/zQuoter.sol",
+      "deployedBytecodeSize": 33106,
+      "deployedBytecodeHash": "0xe9662f1246c84f2c789c6fe8aee51eb83f0733b1657369641eade23617eb3b9a",
+      "functionCount": 9,
+      "eventCount": 0,
+      "errorCount": 2,
+      "scope": {
+        "byScope": {
+          "core-swap": [
+            "build3HopMulticall",
+            "buildBestSwap",
+            "buildBestSwapViaETHMulticall",
+            "buildHybridSplit",
+            "buildSplitSwap",
+            "buildSwapAuto",
+            "getQuotes",
+            "quoteCurve",
+            "quoteLido"
+          ],
+          "swap-support": [],
+          "extension": []
+        },
+        "ethereumOnly": [
+          "quoteLido"
+        ]
+      }
+    }
+  },
+  "venues": [
+    {
+      "id": 0,
+      "name": "UNI_V2",
+      "routerFunction": "swapV2",
+      "quoterSource": "UNI_V2",
+      "notes": "CREATE2 pair; 0.30% fee math"
+    },
+    {
+      "id": 1,
+      "name": "SUSHI",
+      "routerFunction": "swapV2",
+      "quoterSource": "SUSHI",
+      "notes": "swapV2 with deadline == max sentinel"
+    },
+    {
+      "id": 2,
+      "name": "ZAMM",
+      "routerFunction": "swapVZ",
+      "quoterSource": "ZAMM",
+      "notes": "Precision pools; ERC-20 + ERC-6909"
+    },
+    {
+      "id": 3,
+      "name": "UNI_V3",
+      "routerFunction": "swapV3",
+      "quoterSource": "UNI_V3",
+      "notes": "Concentrated liquidity; fee tiers"
+    },
+    {
+      "id": 4,
+      "name": "UNI_V4",
+      "routerFunction": "swapV4",
+      "quoterSource": "UNI_V4",
+      "notes": "PoolManager unlock callback"
+    },
+    {
+      "id": 5,
+      "name": "CURVE",
+      "routerFunction": "swapCurve",
+      "quoterSource": "CURVE",
+      "notes": "StableNg/Crypto/Meta pools; up to 5 hops"
+    },
+    {
+      "id": 6,
+      "name": "LIDO",
+      "routerFunction": "exactETHToSTETH|exactETHToWSTETH|ethToExactSTETH|ethToExactWSTETH",
+      "quoterSource": "LIDO",
+      "ethereumOnly": true,
+      "notes": "stETH/wstETH wrap-style routes"
+    },
+    {
+      "id": 7,
+      "name": "WETH_WRAP",
+      "routerFunction": "wrap|unwrap",
+      "quoterSource": "WETH_WRAP",
+      "notes": "Native <-> WETH 1:1 fast path"
+    },
+    {
+      "id": null,
+      "name": "EXECUTOR",
+      "routerFunction": "snwap|snwapMulti",
+      "quoterSource": null,
+      "notes": "Generic safeExecutor target (e.g. Bebop, Bitgetol forwarders)"
+    }
+  ],
+  "routeShapes": [
+    {
+      "name": "single-hop",
+      "quoterFunction": "buildBestSwap",
+      "hops": 1,
+      "notes": "Best direct venue"
+    },
+    {
+      "name": "two-hop-hub",
+      "quoterFunction": "buildBestSwapViaETHMulticall",
+      "hops": 2,
+      "notes": "Via one hub intermediate"
+    },
+    {
+      "name": "three-hop",
+      "quoterFunction": "build3HopMulticall",
+      "hops": 3,
+      "notes": "Via two hub intermediates"
+    },
+    {
+      "name": "split",
+      "quoterFunction": "buildSplitSwap",
+      "hops": 1,
+      "notes": "Exact-in split across top 2 venues"
+    },
+    {
+      "name": "hybrid-split",
+      "quoterFunction": "buildHybridSplit",
+      "hops": 2,
+      "notes": "Split best direct vs best 2-hop"
+    },
+    {
+      "name": "auto",
+      "quoterFunction": "buildSwapAuto",
+      "hops": 3,
+      "notes": "Cascade 2-hop then 3-hop"
+    }
+  ],
+  "hubs": [
+    "WETH",
+    "USDC",
+    "USDT",
+    "DAI",
+    "WBTC",
+    "WSTETH"
+  ],
+  "extensionDecision": {
+    "summary": "Preserve the swap surface (core-swap + swap-support) as the routing baseline. Treat NameNFT, zAMM liquidity, and ownership as non-swap extensions that are capability-gated per issue #11 and excluded from non-Ethereum deployments.",
+    "nonSwapExtensions": {
+      "NameNFT": {
+        "functions": [
+          "revealName",
+          "onERC721Received"
+        ],
+        "decision": "ethereum-only",
+        "rationale": ".wei naming is an Ethereum-mainnet product; gate behind a capability flag and drop on other chains."
+      },
+      "zAMM_liquidity": {
+        "functions": [
+          "addLiquidity"
+        ],
+        "decision": "out-of-swap-scope",
+        "rationale": "LP minting, not routing; preserved for parity but not part of Setwise swap execution."
+      },
+      "ownership": {
+        "functions": [
+          "transferOwnership"
+        ],
+        "decision": "retain",
+        "rationale": "Required for trust/ensureAllowance administration; keep but govern via issue #37."
+      }
+    },
+    "separateContracts": [
+      {
+        "name": "DAO (Moloch)",
+        "path": "zFi-main/src/dao",
+        "decision": "out-of-scope",
+        "rationale": "Not part of router/quoter ABI."
+      },
+      {
+        "name": "Coin launch",
+        "path": "zFi-main/src (CoinLaunch/CauseCoin)",
+        "decision": "out-of-scope",
+        "rationale": "Token-launch product, not routing."
+      },
+      {
+        "name": "Dutch auction",
+        "path": "zFi-main/src/DutchAuction.sol",
+        "decision": "out-of-scope",
+        "rationale": "Auction product, not routing."
+      }
+    ],
+    "knownUnsupported": [
+      "Default-profile zQuoter bytecode exceeds EIP-170 (24,576 bytes); deploy with the `zquoter` Foundry profile (optimizer_runs=20, yul=false).",
+      "Bebop and Bitgetol have no typed router interface; reachable only as snwap executor targets.",
+      "Curve pools using the CURVE_ETH sentinel directly are not buildable by the router (quoter filters them)."
+    ]
+  }
+}

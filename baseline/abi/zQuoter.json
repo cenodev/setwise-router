@@ -1,0 +1,706 @@
+{
+  "contract": "zQuoter",
+  "source": "zFi-main/src/zQuoter.sol",
+  "upstreamCommit": "43ac1e67388cc4f96be6b2cbeb0f95f647c9aeb3",
+  "deployedBytecodeSize": 33106,
+  "deployedBytecodeHash": "0xe9662f1246c84f2c789c6fe8aee51eb83f0733b1657369641eade23617eb3b9a",
+  "abi": {
+    "constructor": {
+      "stateMutability": "payable",
+      "inputs": []
+    },
+    "receive": false,
+    "fallback": false,
+    "functions": [
+      {
+        "name": "build3HopMulticall",
+        "signature": "build3HopMulticall(address,bool,address,address,uint256,uint256,uint256)",
+        "selector": "0x4c464f59",
+        "stateMutability": "view",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "name": "exactOut",
+            "type": "bool"
+          },
+          {
+            "name": "tokenIn",
+            "type": "address"
+          },
+          {
+            "name": "tokenOut",
+            "type": "address"
+          },
+          {
+            "name": "swapAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "slippageBps",
+            "type": "uint256"
+          },
+          {
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "a",
+            "type": "tuple",
+            "components": [
+              {
+                "name": "source",
+                "type": "uint8"
+              },
+              {
+                "name": "feeBps",
+                "type": "uint256"
+              },
+              {
+                "name": "amountIn",
+                "type": "uint256"
+              },
+              {
+                "name": "amountOut",
+                "type": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "b",
+            "type": "tuple",
+            "components": [
+              {
+                "name": "source",
+                "type": "uint8"
+              },
+              {
+                "name": "feeBps",
+                "type": "uint256"
+              },
+              {
+                "name": "amountIn",
+                "type": "uint256"
+              },
+              {
+                "name": "amountOut",
+                "type": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "c",
+            "type": "tuple",
+            "components": [
+              {
+                "name": "source",
+                "type": "uint8"
+              },
+              {
+                "name": "feeBps",
+                "type": "uint256"
+              },
+              {
+                "name": "amountIn",
+                "type": "uint256"
+              },
+              {
+                "name": "amountOut",
+                "type": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "calls",
+            "type": "bytes[]"
+          },
+          {
+            "name": "multicall",
+            "type": "bytes"
+          },
+          {
+            "name": "msgValue",
+            "type": "uint256"
+          }
+        ],
+        "group": "quote",
+        "scope": "core-swap",
+        "notes": "3-hop route over two hub intermediates"
+      },
+      {
+        "name": "quoteLido",
+        "signature": "quoteLido(bool,address,uint256)",
+        "selector": "0x61bcd9b0",
+        "stateMutability": "view",
+        "inputs": [
+          {
+            "name": "exactOut",
+            "type": "bool"
+          },
+          {
+            "name": "tokenOut",
+            "type": "address"
+          },
+          {
+            "name": "swapAmount",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "amountIn",
+            "type": "uint256"
+          },
+          {
+            "name": "amountOut",
+            "type": "uint256"
+          }
+        ],
+        "group": "quote",
+        "scope": "core-swap",
+        "venue": "LIDO",
+        "ethereumOnly": true,
+        "notes": "ETH -> stETH/wstETH quote"
+      },
+      {
+        "name": "buildHybridSplit",
+        "signature": "buildHybridSplit(address,address,address,uint256,uint256,uint256)",
+        "selector": "0x85f86a90",
+        "stateMutability": "view",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "name": "tokenIn",
+            "type": "address"
+          },
+          {
+            "name": "tokenOut",
+            "type": "address"
+          },
+          {
+            "name": "swapAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "slippageBps",
+            "type": "uint256"
+          },
+          {
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "legs",
+            "type": "tuple[2]",
+            "components": [
+              {
+                "name": "source",
+                "type": "uint8"
+              },
+              {
+                "name": "feeBps",
+                "type": "uint256"
+              },
+              {
+                "name": "amountIn",
+                "type": "uint256"
+              },
+              {
+                "name": "amountOut",
+                "type": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "multicall",
+            "type": "bytes"
+          },
+          {
+            "name": "msgValue",
+            "type": "uint256"
+          }
+        ],
+        "group": "quote",
+        "scope": "core-swap",
+        "notes": "Exact-in split: best direct vs best 2-hop"
+      },
+      {
+        "name": "buildSplitSwap",
+        "signature": "buildSplitSwap(address,address,address,uint256,uint256,uint256)",
+        "selector": "0x892af013",
+        "stateMutability": "view",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "name": "tokenIn",
+            "type": "address"
+          },
+          {
+            "name": "tokenOut",
+            "type": "address"
+          },
+          {
+            "name": "swapAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "slippageBps",
+            "type": "uint256"
+          },
+          {
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "legs",
+            "type": "tuple[2]",
+            "components": [
+              {
+                "name": "source",
+                "type": "uint8"
+              },
+              {
+                "name": "feeBps",
+                "type": "uint256"
+              },
+              {
+                "name": "amountIn",
+                "type": "uint256"
+              },
+              {
+                "name": "amountOut",
+                "type": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "multicall",
+            "type": "bytes"
+          },
+          {
+            "name": "msgValue",
+            "type": "uint256"
+          }
+        ],
+        "group": "quote",
+        "scope": "core-swap",
+        "notes": "Exact-in split across top 2 venues"
+      },
+      {
+        "name": "buildSwapAuto",
+        "signature": "buildSwapAuto(address,bool,address,address,uint256,uint256,uint256)",
+        "selector": "0x98d7d292",
+        "stateMutability": "view",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "name": "exactOut",
+            "type": "bool"
+          },
+          {
+            "name": "tokenIn",
+            "type": "address"
+          },
+          {
+            "name": "tokenOut",
+            "type": "address"
+          },
+          {
+            "name": "swapAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "slippageBps",
+            "type": "uint256"
+          },
+          {
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "best",
+            "type": "tuple",
+            "components": [
+              {
+                "name": "source",
+                "type": "uint8"
+              },
+              {
+                "name": "feeBps",
+                "type": "uint256"
+              },
+              {
+                "name": "amountIn",
+                "type": "uint256"
+              },
+              {
+                "name": "amountOut",
+                "type": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "callData",
+            "type": "bytes"
+          },
+          {
+            "name": "amountLimit",
+            "type": "uint256"
+          },
+          {
+            "name": "msgValue",
+            "type": "uint256"
+          }
+        ],
+        "group": "quote",
+        "scope": "core-swap",
+        "notes": "Cascade: 2-hop then 3-hop"
+      },
+      {
+        "name": "getQuotes",
+        "signature": "getQuotes(bool,address,address,uint256)",
+        "selector": "0xe1fd10bc",
+        "stateMutability": "view",
+        "inputs": [
+          {
+            "name": "exactOut",
+            "type": "bool"
+          },
+          {
+            "name": "tokenIn",
+            "type": "address"
+          },
+          {
+            "name": "tokenOut",
+            "type": "address"
+          },
+          {
+            "name": "swapAmount",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "best",
+            "type": "tuple",
+            "components": [
+              {
+                "name": "source",
+                "type": "uint8"
+              },
+              {
+                "name": "feeBps",
+                "type": "uint256"
+              },
+              {
+                "name": "amountIn",
+                "type": "uint256"
+              },
+              {
+                "name": "amountOut",
+                "type": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "quotes",
+            "type": "tuple[]",
+            "components": [
+              {
+                "name": "source",
+                "type": "uint8"
+              },
+              {
+                "name": "feeBps",
+                "type": "uint256"
+              },
+              {
+                "name": "amountIn",
+                "type": "uint256"
+              },
+              {
+                "name": "amountOut",
+                "type": "uint256"
+              }
+            ]
+          }
+        ],
+        "group": "quote",
+        "scope": "core-swap",
+        "notes": "All-venue quote discovery; filters bogus exact-out V3 picks"
+      },
+      {
+        "name": "buildBestSwapViaETHMulticall",
+        "signature": "buildBestSwapViaETHMulticall(address,address,bool,address,address,uint256,uint256,uint256)",
+        "selector": "0xe453166e",
+        "stateMutability": "view",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "name": "refundTo",
+            "type": "address"
+          },
+          {
+            "name": "exactOut",
+            "type": "bool"
+          },
+          {
+            "name": "tokenIn",
+            "type": "address"
+          },
+          {
+            "name": "tokenOut",
+            "type": "address"
+          },
+          {
+            "name": "swapAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "slippageBps",
+            "type": "uint256"
+          },
+          {
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "a",
+            "type": "tuple",
+            "components": [
+              {
+                "name": "source",
+                "type": "uint8"
+              },
+              {
+                "name": "feeBps",
+                "type": "uint256"
+              },
+              {
+                "name": "amountIn",
+                "type": "uint256"
+              },
+              {
+                "name": "amountOut",
+                "type": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "b",
+            "type": "tuple",
+            "components": [
+              {
+                "name": "source",
+                "type": "uint8"
+              },
+              {
+                "name": "feeBps",
+                "type": "uint256"
+              },
+              {
+                "name": "amountIn",
+                "type": "uint256"
+              },
+              {
+                "name": "amountOut",
+                "type": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "calls",
+            "type": "bytes[]"
+          },
+          {
+            "name": "multicall",
+            "type": "bytes"
+          },
+          {
+            "name": "msgValue",
+            "type": "uint256"
+          }
+        ],
+        "group": "quote",
+        "scope": "core-swap",
+        "notes": "Best of single-hop vs 2-hop hub route"
+      },
+      {
+        "name": "buildBestSwap",
+        "signature": "buildBestSwap(address,bool,address,address,uint256,uint256,uint256)",
+        "selector": "0xe7798987",
+        "stateMutability": "view",
+        "inputs": [
+          {
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "name": "exactOut",
+            "type": "bool"
+          },
+          {
+            "name": "tokenIn",
+            "type": "address"
+          },
+          {
+            "name": "tokenOut",
+            "type": "address"
+          },
+          {
+            "name": "swapAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "slippageBps",
+            "type": "uint256"
+          },
+          {
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "best",
+            "type": "tuple",
+            "components": [
+              {
+                "name": "source",
+                "type": "uint8"
+              },
+              {
+                "name": "feeBps",
+                "type": "uint256"
+              },
+              {
+                "name": "amountIn",
+                "type": "uint256"
+              },
+              {
+                "name": "amountOut",
+                "type": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "callData",
+            "type": "bytes"
+          },
+          {
+            "name": "amountLimit",
+            "type": "uint256"
+          },
+          {
+            "name": "msgValue",
+            "type": "uint256"
+          }
+        ],
+        "group": "quote",
+        "scope": "core-swap",
+        "notes": "Best single-hop route + calldata"
+      },
+      {
+        "name": "quoteCurve",
+        "signature": "quoteCurve(bool,address,address,uint256,uint256)",
+        "selector": "0xfdfd58fb",
+        "stateMutability": "view",
+        "inputs": [
+          {
+            "name": "exactOut",
+            "type": "bool"
+          },
+          {
+            "name": "tokenIn",
+            "type": "address"
+          },
+          {
+            "name": "tokenOut",
+            "type": "address"
+          },
+          {
+            "name": "swapAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "maxCandidates",
+            "type": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "amountIn",
+            "type": "uint256"
+          },
+          {
+            "name": "amountOut",
+            "type": "uint256"
+          },
+          {
+            "name": "bestPool",
+            "type": "address"
+          },
+          {
+            "name": "usedUnderlying",
+            "type": "bool"
+          },
+          {
+            "name": "usedStable",
+            "type": "bool"
+          },
+          {
+            "name": "iIndex",
+            "type": "uint8"
+          },
+          {
+            "name": "jIndex",
+            "type": "uint8"
+          }
+        ],
+        "group": "quote",
+        "scope": "core-swap",
+        "venue": "CURVE",
+        "notes": "Single-hop Curve quote via MetaRegistry"
+      }
+    ],
+    "events": [],
+    "errors": [
+      {
+        "name": "NoRoute",
+        "signature": "NoRoute()",
+        "selector": "0x6586e129",
+        "inputs": []
+      },
+      {
+        "name": "SlippageBpsTooHigh",
+        "signature": "SlippageBpsTooHigh()",
+        "selector": "0x982c96c6",
+        "inputs": []
+      }
+    ]
+  }
+}
