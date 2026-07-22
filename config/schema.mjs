@@ -15,6 +15,12 @@
  * environment-variable names only, never their values.
  */
 
+import {
+  CAPABILITY_DEFINITIONS,
+  ETHEREUM_CHAIN_ID,
+  KNOWN_CAPABILITIES,
+} from "./capabilities.mjs";
+
 export const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 export const BYTES32_RE = /^0x[0-9a-fA-F]{64}$/;
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -118,6 +124,7 @@ const CROSS_CHAIN_CONSISTENT_ROLES = Object.freeze(["multicall3", "permit2"]);
  * @property {ExplorerConfig} explorer
  * @property {Record<string, VenueConfig>} venues
  * @property {Record<string, { enabled: boolean }>} [aggregators]
+ * @property {Record<string, { enabled: boolean }>} capabilities
  */
 
 function isPlainObject(value) {
@@ -201,6 +208,7 @@ export function validateChainConfig(config, expectedChainId) {
 
   validateVenues(config.venues, label, errors);
   validateAggregators(config.aggregators, label, errors);
+  validateCapabilities(config.capabilities, config.chainId, config.venues, label, errors);
 
   collectSingletonDuplicates(config, label, errors);
 
@@ -315,6 +323,60 @@ function validateAggregators(aggregators, label, errors) {
   for (const [name, entry] of Object.entries(aggregators)) {
     if (!isPlainObject(entry) || typeof entry.enabled !== "boolean") {
       errors.push(`${label}: aggregators.${name}.enabled must be a boolean`);
+    }
+  }
+}
+
+/**
+ * Validate the chain-specific extension capabilities (issue #11).
+ *
+ * Every known capability must be declared explicitly with a boolean `enabled`.
+ * An enabled capability must satisfy its deployment requirement: Ethereum-only
+ * capabilities may only be enabled on Ethereum (so no Ethereum address is
+ * reachable from another chain), and any required venues must be enabled.
+ *
+ * @param {unknown} capabilities
+ * @param {number} chainId
+ * @param {Record<string, { enabled: boolean }>|undefined} venues
+ * @param {string} label
+ * @param {string[]} errors
+ */
+function validateCapabilities(capabilities, chainId, venues, label, errors) {
+  if (!isPlainObject(capabilities)) {
+    errors.push(`${label}: capabilities must be an object`);
+    return;
+  }
+  for (const capability of KNOWN_CAPABILITIES) {
+    if (!(capability in capabilities)) {
+      errors.push(`${label}: capabilities.${capability} must be declared explicitly`);
+      continue;
+    }
+    const entry = capabilities[capability];
+    if (!isPlainObject(entry) || typeof entry.enabled !== "boolean") {
+      errors.push(`${label}: capabilities.${capability}.enabled must be a boolean`);
+      continue;
+    }
+    if (!entry.enabled) continue;
+
+    const definition = CAPABILITY_DEFINITIONS[capability];
+    if (definition.ethereumOnly && chainId !== ETHEREUM_CHAIN_ID) {
+      errors.push(
+        `${label}: capabilities.${capability} is Ethereum-only and cannot be enabled on chain ${chainId}`,
+      );
+    }
+    for (const venue of definition.requiresVenues) {
+      if (!venues?.[venue]?.enabled) {
+        errors.push(
+          `${label}: capabilities.${capability} requires venues.${venue} to be enabled`,
+        );
+      }
+    }
+  }
+  for (const capability of Object.keys(capabilities)) {
+    if (!KNOWN_CAPABILITIES.includes(capability)) {
+      errors.push(
+        `${label}: unknown capability "${capability}" (add it to KNOWN_CAPABILITIES first)`,
+      );
     }
   }
 }

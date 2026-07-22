@@ -26,6 +26,15 @@ export {
 } from "./schema.mjs";
 
 export {
+  KNOWN_CAPABILITIES,
+  CAPABILITY_DEFINITIONS,
+  CAPABILITY_DISPLAY_NAMES,
+  ETHEREUM_CHAIN_ID,
+  capabilityDefinition,
+  isEthereumOnlyCapability,
+} from "./capabilities.mjs";
+
+export {
   VENUE_DISPLAY_NAMES,
   generateServiceConfig,
   generateAppConfig,
