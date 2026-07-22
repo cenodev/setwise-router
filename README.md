@@ -129,6 +129,20 @@ Generate the typed outputs (written to the git-ignored `config/generated/`):
 npm run build:config
 ```
 
+## Chain-specific extension capabilities
+
+Issue #11 capability-gates the Ethereum-only ZFi extensions (Curve, Lido, zAMM,
+Sushi, NameNFT, and related extensions). Each chain declares a `capabilities`
+map alongside `venues`; the registry rejects an Ethereum-only capability being
+enabled on another chain and any capability whose required venues are disabled,
+so no Ethereum address is reachable from another chain configuration and a
+disabled extension reverts before moving assets.
+
+- [`config/capabilities.mjs`](./config/capabilities.mjs) — capability
+  definitions, deployment requirements, and the non-swap extension decisions.
+- [`docs/config/CAPABILITIES.md`](./docs/config/CAPABILITIES.md) — capability
+  matrix, per-chain state, and ABI behavior when a capability is unavailable.
+
 ## Terminology
 
 In user-facing UI copy, prefer **Set** when referring to Setwise liquidity.
