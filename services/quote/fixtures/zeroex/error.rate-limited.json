@@ -1,0 +1,4 @@
+{
+  "code": 429,
+  "reason": "Rate limit exceeded. Please retry after 1 second."
+}

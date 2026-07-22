@@ -1,0 +1,8 @@
+{
+  "code": 100,
+  "reason": "Validation Failed",
+  "values": {
+    "reason": "INSUFFICIENT_LIQUIDITY",
+    "value": "Not enough liquidity"
+  }
+}

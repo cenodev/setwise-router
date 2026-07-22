@@ -1,0 +1,52 @@
+{
+  "blockNumber": "20312456",
+  "buyAmount": "2487500000",
+  "buyToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  "sellAmount": "1000000000000000000",
+  "sellToken": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+  "to": "0xDef1C0ded9bec7F1a1670819833240f027b25EfF",
+  "data": "0x415565b0000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+  "value": "0",
+  "gas": "185000",
+  "gasPrice": "12000000000",
+  "protocolFee": "0",
+  "minBuyAmount": "2462625000",
+  "maxSellAmount": "1000000000000000000",
+  "liquidityAvailable": true,
+  "totalNetworkFee": "222000000000000",
+  "fees": {
+    "zeroExFee": {
+      "type": "volume",
+      "amount": "1243750",
+      "token": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    },
+    "integratorFee": null,
+    "gasFee": {
+      "type": "gas",
+      "amount": "222000000000000",
+      "token": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+    }
+  },
+  "issues": null,
+  "route": {
+    "fills": [
+      {
+        "from": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "to": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "source": "Uniswap_V3",
+        "proportionBps": "10000"
+      }
+    ],
+    "tokens": [
+      {
+        "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "symbol": "WETH"
+      },
+      {
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "symbol": "USDC"
+      }
+    ]
+  },
+  "zid": "eth-price-fixture-001"
+}

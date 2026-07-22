@@ -1,0 +1,52 @@
+{
+  "blockNumber": "1204567",
+  "buyAmount": "2487500000",
+  "buyToken": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  "sellAmount": "1000000000000000000",
+  "sellToken": "NATIVE",
+  "to": "0xDef1C0ded9bec7F1a1670819833240f027b25EfF",
+  "data": "0x415565b0000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee000000000000000000000000833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+  "value": "1000000000000000000",
+  "gas": "195000",
+  "gasPrice": "150000000",
+  "protocolFee": "0",
+  "minBuyAmount": "2462625000",
+  "maxSellAmount": "1000000000000000000",
+  "liquidityAvailable": true,
+  "totalNetworkFee": "29250000000000",
+  "fees": {
+    "zeroExFee": {
+      "type": "volume",
+      "amount": "1243750",
+      "token": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+    },
+    "integratorFee": null,
+    "gasFee": {
+      "type": "gas",
+      "amount": "29250000000000",
+      "token": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+    }
+  },
+  "issues": null,
+  "route": {
+    "fills": [
+      {
+        "from": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+        "to": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "source": "Uniswap_V3",
+        "proportionBps": "10000"
+      }
+    ],
+    "tokens": [
+      {
+        "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+        "symbol": "ETH"
+      },
+      {
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "symbol": "USDC"
+      }
+    ]
+  },
+  "zid": "robinhood-quote-fixture-001"
+}
