@@ -85,6 +85,27 @@ test("every chain declares every known venue explicitly", () => {
   }
 });
 
+test("every enabled direct AMM has complete chain-specific adapter configuration", () => {
+  for (const chainId of SUPPORTED) {
+    const { venues } = getChainConfig(chainId);
+    for (const venue of ["uniswapV2", "sushiswap", "pancakeSwap"]) {
+      if (!venues[venue].enabled) continue;
+      assert.ok(isAddress(venues[venue].factory), `${chainId}:${venue} factory`);
+      assert.match(venues[venue].initCodeHash, /^0x[0-9a-fA-F]{64}$/);
+      assert.ok(venues[venue].feeBps > 0, `${chainId}:${venue} feeBps`);
+    }
+    if (venues.uniswapV3.enabled) {
+      assert.ok(isAddress(venues.uniswapV3.factory), `${chainId}:uniswapV3 factory`);
+      assert.match(venues.uniswapV3.initCodeHash, /^0x[0-9a-fA-F]{64}$/);
+      assert.deepEqual(venues.uniswapV3.fees, [100, 500, 3000, 10000]);
+    }
+    if (venues.uniswapV4.enabled) {
+      assert.ok(isAddress(venues.uniswapV4.poolManager), `${chainId}:uniswapV4 manager`);
+      assert.equal(venues.uniswapV4.hookPolicy, "hookless");
+    }
+  }
+});
+
 test("Robinhood Chain is scaffolded with every venue explicitly disabled", () => {
   const config = getChainConfig(4663);
   assert.equal(config.addressesVerified, false);
@@ -192,6 +213,33 @@ test("rejects an unknown venue key", () => {
   const result = validateChainConfig(config, 1);
   assert.equal(result.valid, false);
   assert.ok(result.errors.some((e) => /unknown venue/.test(e)));
+});
+
+test("rejects an enabled V2 adapter without immutable derivation and fee inputs", () => {
+  const config = baseConfig();
+  delete config.venues.uniswapV2.initCodeHash;
+  delete config.venues.uniswapV2.feeBps;
+  const result = validateChainConfig(config, 1);
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some((e) => /uniswapV2.*initCodeHash/.test(e)));
+  assert.ok(result.errors.some((e) => /uniswapV2.*feeBps/.test(e)));
+});
+
+test("rejects missing, duplicate, and invalid V3 fee configuration", () => {
+  const config = baseConfig();
+  config.venues.uniswapV3.fees = [500, 500, 0];
+  const result = validateChainConfig(config, 1);
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some((e) => /duplicate fee 500/.test(e)));
+  assert.ok(result.errors.some((e) => /uint24 values greater than zero/.test(e)));
+});
+
+test("rejects an enabled V4 adapter without an explicit supported hook policy", () => {
+  const config = baseConfig();
+  config.venues.uniswapV4.hookPolicy = "any-hook";
+  const result = validateChainConfig(config, 1);
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some((e) => /hookPolicy/.test(e)));
 });
 
 test("rejects a verified chain missing its wrappedNative address", () => {
@@ -304,6 +352,10 @@ test("deploy inputs surface verified core addresses", () => {
   assert.ok(isAddress(deploy.chains[1].wrappedNative));
   assert.ok(isAddress(deploy.chains[1].multicall3));
   assert.ok(isAddress(deploy.chains[1].venues.uniswapV3.factory));
+  assert.match(deploy.chains[1].venues.uniswapV3.initCodeHash, /^0x[0-9a-f]{64}$/);
+  assert.deepEqual(deploy.chains[1].venues.uniswapV3.fees, [100, 500, 3000, 10000]);
+  assert.equal(deploy.chains[1].venues.uniswapV4.hookPolicy, "hookless");
+  assert.equal(deploy.chains[56].venues.pancakeSwap.feeBps, 20);
 });
 
 test("generation is deterministic", () => {

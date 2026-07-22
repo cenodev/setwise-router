@@ -35,7 +35,9 @@
     },
     "uniswapV3": {
       "enabled": true,
-      "factory": "0xdB1d10011AD0Ff90774D0C6Bb92e5C5c8b4461F7"
+      "factory": "0xdB1d10011AD0Ff90774D0C6Bb92e5C5c8b4461F7",
+      "initCodeHash": "0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54",
+      "fees": [100, 500, 3000, 10000]
     },
     "uniswapV4": {
       "enabled": false
@@ -45,7 +47,9 @@
     },
     "pancakeSwap": {
       "enabled": true,
-      "factory": "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73"
+      "factory": "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73",
+      "initCodeHash": "0x00fb7f630766e6a796048ea87d01acd3068e8ff67d078148a3fa3f4a84f69bd5",
+      "feeBps": 20
     },
     "curve": {
       "enabled": false

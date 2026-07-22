@@ -157,6 +157,9 @@ export function generateDeployInputs(chains) {
         factory: entry.factory ?? null,
         poolManager: entry.poolManager ?? null,
         initCodeHash: entry.initCodeHash ?? null,
+        feeBps: entry.feeBps ?? null,
+        fees: entry.fees ?? null,
+        hookPolicy: entry.hookPolicy ?? null,
       };
     }
     out.chains[chainId] = {

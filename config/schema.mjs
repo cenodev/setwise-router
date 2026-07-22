@@ -41,6 +41,16 @@ export const KNOWN_VENUES = Object.freeze([
   "setwise",
 ]);
 
+/** V2-compatible venues whose pools are derived with CREATE2. */
+export const V2_VENUES = Object.freeze([
+  "uniswapV2",
+  "sushiswap",
+  "pancakeSwap",
+]);
+
+/** V4 hook policies understood by the execution adapter. */
+export const V4_HOOK_POLICIES = Object.freeze(["hookless"]);
+
 /**
  * Address fields that may appear on a venue entry. `initCodeHash` is a bytes32,
  * the rest are 20-byte addresses.
@@ -104,6 +114,9 @@ const CROSS_CHAIN_CONSISTENT_ROLES = Object.freeze(["multicall3", "permit2"]);
  * @property {string|null} [factory]
  * @property {string|null} [poolManager]
  * @property {string|null} [initCodeHash]
+ * @property {number} [feeBps]          V2 fee in basis points.
+ * @property {number[]} [fees]          Supported V3 fees in hundredths of a bip.
+ * @property {"hookless"} [hookPolicy] Supported V4 hook policy.
  * @property {string|null} [poolRegistry]  Setwise pool registry (internal name).
  * @property {string|null} [tokenHub]      Setwise token hub (internal name).
  */
@@ -306,11 +319,71 @@ function validateVenues(venues, label, errors) {
     if ("initCodeHash" in entry && entry.initCodeHash !== null && !isBytes32(entry.initCodeHash)) {
       errors.push(`${label}: venues.${venue}.initCodeHash must be null or bytes32`);
     }
+    if (
+      "feeBps" in entry &&
+      (!Number.isInteger(entry.feeBps) || entry.feeBps <= 0 || entry.feeBps >= 10_000)
+    ) {
+      errors.push(`${label}: venues.${venue}.feeBps must be an integer between 1 and 9999`);
+    }
+    if ("fees" in entry) validateV3Fees(entry.fees, `${label}: venues.${venue}.fees`, errors);
+    if (
+      "hookPolicy" in entry &&
+      (typeof entry.hookPolicy !== "string" || !V4_HOOK_POLICIES.includes(entry.hookPolicy))
+    ) {
+      errors.push(
+        `${label}: venues.${venue}.hookPolicy must be one of ${V4_HOOK_POLICIES.join(", ")}`,
+      );
+    }
+
+    if (!entry.enabled) continue;
+    if (V2_VENUES.includes(venue)) {
+      requireVenueField(entry, "factory", venue, label, isAddress, errors);
+      requireVenueField(entry, "initCodeHash", venue, label, isBytes32, errors);
+      if (!Number.isInteger(entry.feeBps) || entry.feeBps <= 0 || entry.feeBps >= 10_000) {
+        errors.push(`${label}: enabled venues.${venue} requires a valid feeBps`);
+      }
+    } else if (venue === "uniswapV3") {
+      requireVenueField(entry, "factory", venue, label, isAddress, errors);
+      requireVenueField(entry, "initCodeHash", venue, label, isBytes32, errors);
+      if (!Array.isArray(entry.fees) || entry.fees.length === 0) {
+        errors.push(`${label}: enabled venues.uniswapV3 requires at least one supported fee`);
+      }
+    } else if (venue === "uniswapV4") {
+      requireVenueField(entry, "poolManager", venue, label, isAddress, errors);
+      if (!V4_HOOK_POLICIES.includes(entry.hookPolicy)) {
+        errors.push(`${label}: enabled venues.uniswapV4 requires a supported hookPolicy`);
+      }
+    }
   }
   for (const venue of Object.keys(venues)) {
     if (!KNOWN_VENUES.includes(venue)) {
       errors.push(`${label}: unknown venue "${venue}" (add it to KNOWN_VENUES first)`);
     }
+  }
+}
+
+function requireVenueField(entry, field, venue, label, predicate, errors) {
+  if (!predicate(entry[field])) {
+    errors.push(`${label}: enabled venues.${venue} requires a valid ${field}`);
+  }
+}
+
+function validateV3Fees(fees, path, errors) {
+  if (!Array.isArray(fees) || fees.length === 0) {
+    errors.push(`${path} must be a non-empty array`);
+    return;
+  }
+  if (fees.length > 10) {
+    errors.push(`${path} supports at most 10 immutable fee tiers`);
+  }
+  const seen = new Set();
+  for (const fee of fees) {
+    if (!Number.isInteger(fee) || fee <= 0 || fee > 0xffffff) {
+      errors.push(`${path} entries must be uint24 values greater than zero`);
+      continue;
+    }
+    if (seen.has(fee)) errors.push(`${path} contains duplicate fee ${fee}`);
+    seen.add(fee);
   }
 }
 
