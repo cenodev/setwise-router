@@ -84,3 +84,9 @@ export {
   validatePoolIdentity,
   validateSupportedAssets,
 } from "./setwise-pool-catalog.js";
+export {
+  ZeroExAdapter,
+  ZeroExAdapterError,
+  ZEROEX_CHAIN_IDS,
+  ZEROEX_ERROR_CODES,
+} from "./zeroex-adapter.js";
