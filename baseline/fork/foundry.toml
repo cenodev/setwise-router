@@ -1,0 +1,23 @@
+# Setwise-owned fork harness for issue #5 baseline capture.
+# Deploys the pinned zQuoter against a mainnet fork at the block pinned in
+# zFi-main/foundry.toml and records representative return values, gas, and
+# revert selectors. Run via scripts/capture-execution-fixtures.mjs.
+[profile.default]
+src = "src"
+out = "out"
+solc = "0.8.34"
+via_ir = true
+optimizer = true
+optimizer_runs = 20
+no_rpc_rate_limit = true
+libs = ["../../zFi-main/lib"]
+allow_paths = ["../../zFi-main"]
+remappings = [
+  "forge-std/=../../zFi-main/lib/forge-std/src/",
+  "zfi/=../../zFi-main/src/",
+]
+fs_permissions = [{ access = "read", path = "./" }]
+
+# Match the upstream `zquoter` profile so zQuoter stays under EIP-170.
+[profile.default.optimizer_details]
+yul = false
