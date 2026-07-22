@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "chainId": 56,
+  "chainKey": "bsc",
+  "contracts": {
+    "setwisePoolRegistry": {
+      "status": "pending",
+      "kind": "uups-proxy",
+      "displayName": "Set pool registry"
+    },
+    "setwiseTokenHub": {
+      "status": "pending",
+      "kind": "direct",
+      "displayName": "Set token hub"
+    },
+    "setwiseRouter": {
+      "status": "pending",
+      "kind": "direct",
+      "displayName": "Set Router"
+    },
+    "setwiseQuoter": {
+      "status": "pending",
+      "kind": "direct",
+      "displayName": "Set Quoter"
+    }
+  }
+}

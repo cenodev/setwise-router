@@ -29,10 +29,11 @@ Neither workflow reads production secrets. Optional repository **variables**
 6. `npm run typecheck`
 7. `npm test` and `npm run test:services`
 8. `npm run build:config` (typed multi-chain registry outputs)
-9. `npm run build:services`
-10. Default-profile `forge build` + EIP-170 gate for **zRouter**
-11. `zquoter`-profile `forge build` + EIP-170 gate for **zQuoter** (soft headroom fails before the hard 24,576-byte limit)
-12. Secret-free Foundry unit tests (`npm run test:contracts`) — temporary foundry config **without** `eth_rpc_url` for `test/{zSwap,ShareBurner,CollectorVault}.t.sol`, plus `contracts/` Setwise data-type tests
+9. `npm run verify:deployments` (schema-validated deployment manifests; no RPC)
+10. `npm run build:services`
+11. Default-profile `forge build` + EIP-170 gate for **zRouter**
+12. `zquoter`-profile `forge build` + EIP-170 gate for **zQuoter** (soft headroom fails before the hard 24,576-byte limit)
+13. Secret-free Foundry unit tests (`npm run test:contracts`) — temporary foundry config **without** `eth_rpc_url` for `test/{zSwap,ShareBurner,CollectorVault}.t.sol`, plus `contracts/` Setwise data-type tests
 
 ## What `fork` runs
 

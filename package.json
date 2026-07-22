@@ -27,7 +27,10 @@
     "format:fix": "node scripts/format-check.mjs --fix",
     "clean": "node scripts/clean.mjs",
     "check:bytecode": "node scripts/check-bytecode-size.mjs",
-    "check": "npm run lint && npm run typecheck && npm run format && npm run test && npm run test:services && npm run build:config && npm run build:services && npm run check:bytecode && npm run test:contracts",
+    "verify:deployments": "node scripts/verify-deployments.mjs",
+    "verify:deployments:on-chain": "node scripts/verify-deployments.mjs --on-chain",
+    "verify:deployments:checklist": "node scripts/verify-deployments.mjs --checklist",
+    "check": "npm run lint && npm run typecheck && npm run format && npm run test && npm run test:services && npm run build:config && npm run verify:deployments && npm run build:services && npm run check:bytecode && npm run test:contracts",
     "baseline:abi": "node scripts/build-abi-baseline.mjs && node scripts/build-abi-docs.mjs",
     "baseline:routes": "node scripts/build-route-fixtures.mjs",
     "baseline:capture": "node scripts/capture-execution-fixtures.mjs"

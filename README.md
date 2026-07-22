@@ -145,6 +145,26 @@ an executable transaction, while firm responses contain exactly one.
 - [`services/quote/fixtures/v1/`](./services/quote/fixtures/v1) — exact-input,
   exact-output, indicative, firm, unavailable/excluded/stale/failed, and error
   fixtures exercised by the service tests.
+## Deployment manifests (issue #3)
+
+Committed per-chain deployment records live in [`deployments/`](./deployments).
+Each manifest stores chain id, contract addresses, bytecode hashes, constructor
+inputs, deployment transactions, compiler profiles, and explorer links. UUPS
+proxy addresses are recorded separately from their implementation metadata.
+
+Offline verification (schema + config cross-check, no private keys):
+
+```bash
+npm run verify:deployments
+npm run verify:deployments:checklist
+```
+
+Optional on-chain verification uses each chain's public RPC after checking
+`eth_chainId`:
+
+```bash
+npm run verify:deployments:on-chain
+```
 
 ## Terminology
 
