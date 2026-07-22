@@ -1,0 +1,10 @@
+node_modules/
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Foundry / local tooling (zFi-main also ignores these via its own .gitignore)
+cache/
+out/
+broadcast/

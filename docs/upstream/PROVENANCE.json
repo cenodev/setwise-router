@@ -1,0 +1,46 @@
+{
+  "name": "zFi",
+  "description": "Immutable upstream router stack imported as the Setwise Router baseline",
+  "upstream": {
+    "repository": "https://github.com/z-fi/zFi",
+    "commit": "43ac1e67388cc4f96be6b2cbeb0f95f647c9aeb3",
+    "commitUrl": "https://github.com/z-fi/zFi/commit/43ac1e67388cc4f96be6b2cbeb0f95f647c9aeb3",
+    "commitMessage": "api/render",
+    "committedAt": "2026-06-10T07:53:46Z",
+    "defaultBranch": "main",
+    "license": "MIT",
+    "copyright": "Copyright (c) 2026 ZAMM"
+  },
+  "localPath": "zFi-main",
+  "submodule": {
+    "path": "zFi-main",
+    "url": "https://github.com/z-fi/zFi.git",
+    "commit": "43ac1e67388cc4f96be6b2cbeb0f95f647c9aeb3"
+  },
+  "nestedDependencies": [
+    {
+      "name": "forge-std",
+      "path": "zFi-main/lib/forge-std",
+      "url": "https://github.com/foundry-rs/forge-std",
+      "commit": "0844d7e1fc5e60d77b68e469bff60265f236c398",
+      "note": "Pinned by the upstream zFi gitlink; initialize with git submodule update --init --recursive"
+    }
+  ],
+  "requiredLayers": [
+    "zFi-main/src/zRouter.sol",
+    "zFi-main/src/zQuoter.sol",
+    "zFi-main/server/quote.js",
+    "zFi-main/dapp/modules",
+    "zFi-main/zSwap.html",
+    "zFi-main/script",
+    "zFi-main/test",
+    "zFi-main/audit",
+    "zFi-main/LICENSE"
+  ],
+  "reproduce": [
+    "git clone --recurse-submodules https://github.com/cenodev/setwise-router.git",
+    "cd setwise-router && git submodule update --init --recursive",
+    "git -C zFi-main rev-parse HEAD  # expect 43ac1e67388cc4f96be6b2cbeb0f95f647c9aeb3",
+    "cd zFi-main && forge build"
+  ]
+}

@@ -1,0 +1,3 @@
+[submodule "zFi-main"]
+	path = zFi-main
+	url = https://github.com/z-fi/zFi.git

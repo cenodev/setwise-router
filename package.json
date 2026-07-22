@@ -1,0 +1,16 @@
+{
+  "name": "setwise-router",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Setwise Router — ZFi baseline import and multi-chain Setwise routing program",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/provenance.test.js",
+    "lint": "node scripts/syntax-check.mjs",
+    "typecheck": "node scripts/syntax-check.mjs",
+    "build": "node scripts/build-zfi-baseline.mjs"
+  }
+}
