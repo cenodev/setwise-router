@@ -1,0 +1,8 @@
+{
+  "apiVersion": "v1",
+  "error": {
+    "code": "QUOTE_CHAIN_MISMATCH",
+    "message": "tokenOut.chainId 1 does not match quote chain 8453",
+    "path": "$.tokenOut.chainId"
+  }
+}

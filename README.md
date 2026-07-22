@@ -129,6 +129,22 @@ Generate the typed outputs (written to the git-ignored `config/generated/`):
 npm run build:config
 ```
 
+## Unified quote schema
+
+The quote service exports strict validators for the versioned, chain-aware
+`v1` request, response, and error models shared by ZFi, aggregator, and Set
+sources. Requests bind every token, router, funder, and recipient to the selected
+chain. Responses normalize source outcomes, amounts, gas, fees, approvals,
+expiry, evidence, calldata, and native value; indicative responses cannot carry
+an executable transaction, while firm responses contain exactly one.
+
+- [`docs/api/QUOTE_API_V1.md`](./docs/api/QUOTE_API_V1.md) — invariants,
+  source-state semantics, transaction rules, and stable error codes.
+- [`docs/api/quote-v1.openapi.json`](./docs/api/quote-v1.openapi.json) — OpenAPI
+  3.1 contract for `POST /v1/quotes`.
+- [`services/quote/fixtures/v1/`](./services/quote/fixtures/v1) — exact-input,
+  exact-output, indicative, firm, unavailable/excluded/stale/failed, and error
+  fixtures exercised by the service tests.
 ## Deployment manifests (issue #3)
 
 Committed per-chain deployment records live in [`deployments/`](./deployments).
