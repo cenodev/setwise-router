@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const fix = process.argv.includes("--fix");
 
-const dirs = ["scripts", "test", "services/quote/src"];
+const dirs = ["scripts", "scripts/lib", "test", "services/quote/src", "services/quote/test"];
 let failed = false;
 
 for (const dir of dirs) {
