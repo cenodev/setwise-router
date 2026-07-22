@@ -1,0 +1,30 @@
+{
+  "chainId": 8453,
+  "version": 1,
+  "tokens": [
+    {
+      "chainId": 8453,
+      "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+      "symbol": "ETH",
+      "name": "Ether",
+      "decimals": 18,
+      "kind": "native"
+    },
+    {
+      "chainId": 8453,
+      "address": "0x4200000000000000000000000000000000000006",
+      "symbol": "WETH",
+      "name": "Wrapped Ether",
+      "decimals": 18,
+      "kind": "wrapped-native"
+    },
+    {
+      "chainId": 8453,
+      "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "symbol": "USDC",
+      "name": "USD Coin",
+      "decimals": 6,
+      "kind": "erc20"
+    }
+  ]
+}

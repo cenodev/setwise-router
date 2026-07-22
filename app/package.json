@@ -4,10 +4,11 @@
   "version": "0.0.0",
   "description": "Setwise Router frontend",
   "type": "module",
+  "main": "src/index.js",
   "scripts": {
-    "build": "echo 'app build not yet configured' && exit 0",
-    "test": "echo 'no app tests yet' && exit 0",
-    "lint": "echo 'no app lint yet' && exit 0"
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.js",
+    "lint": "node --check src/index.js src/chains.js src/constants.js src/native.js src/network.js src/quote-session.js src/robinhood.js src/tokens.js scripts/build.mjs test/*.test.js"
   },
   "engines": {
     "node": ">=22"

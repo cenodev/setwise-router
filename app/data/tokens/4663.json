@@ -1,0 +1,62 @@
+{
+  "chainId": 4663,
+  "version": 1,
+  "tokens": [
+    {
+      "chainId": 4663,
+      "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+      "symbol": "ETH",
+      "name": "Ether",
+      "decimals": 18,
+      "kind": "native"
+    },
+    {
+      "chainId": 4663,
+      "address": "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73",
+      "symbol": "WETH",
+      "name": "Wrapped Ether",
+      "decimals": 18,
+      "kind": "wrapped-native"
+    },
+    {
+      "chainId": 4663,
+      "address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+      "symbol": "USDG",
+      "name": "USDG",
+      "decimals": 18,
+      "kind": "erc20"
+    },
+    {
+      "chainId": 4663,
+      "address": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+      "symbol": "NVDA",
+      "name": "NVIDIA • Robinhood Token",
+      "decimals": 18,
+      "kind": "robinhood-stock"
+    },
+    {
+      "chainId": 4663,
+      "address": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+      "symbol": "AAPL",
+      "name": "Apple • Robinhood Token",
+      "decimals": 18,
+      "kind": "robinhood-stock"
+    },
+    {
+      "chainId": 4663,
+      "address": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+      "symbol": "TSLA",
+      "name": "Tesla • Robinhood Token",
+      "decimals": 18,
+      "kind": "robinhood-stock"
+    },
+    {
+      "chainId": 4663,
+      "address": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+      "symbol": "SPY",
+      "name": "SPDR S&P 500 ETF Trust • Robinhood Token",
+      "decimals": 18,
+      "kind": "robinhood-stock"
+    }
+  ]
+}
