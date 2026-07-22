@@ -16,9 +16,9 @@ enum SetwiseAssetMode {
 }
 
 /// @notice Fixed-amount Setwise swap calldata accepted by the router's Setwise
-///         execution path (issue #15). Every field is bound by the pool's
-///         EIP-712 `SwapQuote` signature except `pool`, the native flags, and
-///         `auxiliaryData` routing metadata.
+///         execution path (issue #15). The pool's EIP-712 `SwapQuote` binds the
+///         quote fields. The router authorization additionally binds `pool`,
+///         the native flags, the funding wallet, chain, and router.
 /// @dev `assetIn` / `assetOut` carry the asset address exactly as it appears in
 ///      the signed quote: the wrapped-native token for a native leg, never
 ///      `SETWISE_NATIVE_TOKEN`. The native flags select the pool entry point and

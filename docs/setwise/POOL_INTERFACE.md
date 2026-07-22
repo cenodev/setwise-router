@@ -120,25 +120,26 @@ carries the wrapped-native token and an ERC-20 leg is not the sentinel.
 `SetwiseSwap` (in [`contracts/src/setwise/SetwiseSwap.sol`](../../contracts/src/setwise/SetwiseSwap.sol))
 is the fixed-amount calldata the router's Setwise execution path accepts:
 
-| Field | Type | Bound by quote | Notes |
-| --- | --- | --- | --- |
-| `pool` | `address` | no | Whitelisted Setwise pool proxy (UUPS); registry is issue #8. |
-| `assetIn` | `address` | yes | Input asset as it appears in the quote (wrapped-native for a native leg). |
-| `assetOut` | `address` | yes | Output asset as it appears in the quote (wrapped-native for a native leg). |
-| `nativeIn` | `bool` | no | Input leg settles in native currency; selects the entry point. |
-| `nativeOut` | `bool` | no | Output leg settles in native currency; selects the entry point. |
-| `amountIn` | `uint256` | yes | Fixed signed input amount. |
-| `amountOut` | `uint256` | yes | Fixed signed output amount. |
-| `quoteId` | `bytes32` | yes | One-time quote / inventory guard (replay protection). |
-| `deadline` | `uint256` | yes | Packed inventory/deadline guard; the pool requires `block.timestamp <= deadline`. |
-| `recipient` | `address` | yes | Output recipient. |
-| `signature` | `bytes` | — | Pool EIP-712 `SwapQuote` signature. |
-| `auxiliaryData` | `bytes` | no | Opaque data forwarded to the pool and emitted in `SwapExecuted`. |
+| Field | Type | Pool quote | Router authorization | Notes |
+| --- | --- | --- | --- | --- |
+| `pool` | `address` | no | yes | Whitelisted Setwise pool proxy (UUPS); registry is issue #8. |
+| `assetIn` | `address` | yes | yes | Input asset as it appears in the quote (wrapped-native for a native leg). |
+| `assetOut` | `address` | yes | yes | Output asset as it appears in the quote (wrapped-native for a native leg). |
+| `nativeIn` | `bool` | no | yes | Input leg settles in native currency; selects the entry point. |
+| `nativeOut` | `bool` | no | yes | Output leg settles in native currency; selects the entry point. |
+| `amountIn` | `uint256` | yes | yes | Fixed signed input amount. |
+| `amountOut` | `uint256` | yes | yes | Fixed signed output amount. |
+| `quoteId` | `bytes32` | yes | yes | One-time quote / inventory guard (replay protection). |
+| `deadline` | `uint256` | yes | yes | Packed inventory/deadline guard; the pool requires `block.timestamp <= deadline`. |
+| `recipient` | `address` | yes | yes | Output recipient. |
+| `signature` | `bytes` | proof | no | Pool EIP-712 `SwapQuote` signature. |
+| `auxiliaryData` | `bytes` | no | no | Opaque data forwarded to the pool and emitted in `SwapExecuted`. |
 
 `SetwiseAssetMode` (`ERC20_TO_ERC20`, `NATIVE_TO_ERC20`, `ERC20_TO_NATIVE`) and
 `SetwiseSwapLib.entrySelector` make the mode → entry-point mapping explicit and
 unambiguous. The router-level EIP-712 execution authorization (which also binds
-the funding wallet, chain, and router) is added by issue #10.
+the funding wallet, chain, and router) is documented in
+[`ROUTER_AUTHORIZATION.md`](./ROUTER_AUTHORIZATION.md).
 
 ## Terminology
 
