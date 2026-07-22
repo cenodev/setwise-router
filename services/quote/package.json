@@ -1,0 +1,16 @@
+{
+  "name": "@setwise-router/quote",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Chain-aware quote service for Setwise Router",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test test/",
+    "lint": "node --check src/index.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
