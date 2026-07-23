@@ -47,6 +47,19 @@ export {
   syncQuoteSession,
 } from "./quote-session.js";
 
+export {
+  ROUTE_VIEW_STATES,
+  ROUTE_WARNING_CODES,
+  buildRouteAccessibility,
+  collectWarnings,
+  describeQuoteFetchState,
+  describeRouteDetailsView,
+  formatRouteAddress,
+  parseRoutePath,
+  parseZfiRoutePath,
+  summarizeAlternatives,
+} from "./route-details.js";
+
 export { describeNetworkState } from "./network.js";
 
 export {
