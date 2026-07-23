@@ -31,7 +31,8 @@ import {SetwiseAssetMode, SetwiseSwap, SetwiseSwapLib} from "./SetwiseSwap.sol";
 ///         `QUOTE_SIGNER`.
 ///      The body resolves the settlement mode from the native flags, then:
 ///      - ERC-20 → ERC-20: pulls the authorized input from the funding wallet,
-///        grants the pool an exact per-swap allowance, calls
+///        verifies the exact call-scoped balance increase, grants the pool an
+///        exact per-swap allowance (zero-first when required), calls
 ///        `swapExactAssetForAsset`, and clears the allowance.
 ///      - native → ERC-20: spends exactly `amountIn` of the frame's native bound
 ///        and forwards it as `msg.value` to `swapExactNativeForAsset`, which the
@@ -43,6 +44,9 @@ import {SetwiseAssetMode, SetwiseSwap, SetwiseSwapLib} from "./SetwiseSwap.sol";
 ///        and sends native currency to the recipient.
 ///      In every mode the fixed output is enforced by balance-delta measurement
 ///      (the recipient's ERC-20 balance, or native balance for a native output).
+///      ERC-20 input paths also require the router balance to return to its
+///      pre-call snapshot, rejecting taxed assets and pools that under-consume.
+///      A per-execution lock rejects token and pool reentrancy.
 ///      A successful pool call consumes the shared `quoteId`, so replay reverts
 ///      at the pool. The recipient may be the router itself, staging output for
 ///      future composition (issue #17); a direct execution leaves the router
@@ -187,8 +191,8 @@ contract SetwiseExecutionAdapter is NativeAccounting, SetwiseRouterAuthorization
     {
         uint256 inputBalanceBefore = _pullExactInput(swap.assetIn, funder, swap.amountIn);
 
-        _forceApprove(swap.assetIn, address(pool), swap.amountIn);
         uint256 recipientBefore = _balanceOf(swap.assetOut, swap.recipient);
+        _forceApprove(swap.assetIn, address(pool), swap.amountIn);
         pool.swapExactAssetForAsset(
             swap.assetIn,
             swap.assetOut,
@@ -200,9 +204,9 @@ contract SetwiseExecutionAdapter is NativeAccounting, SetwiseRouterAuthorization
             swap.signature,
             swap.auxiliaryData
         );
-        amountOut = _balanceOf(swap.assetOut, swap.recipient) - recipientBefore;
         _safeApprove(swap.assetIn, address(pool), 0);
         _requireInputBalance(swap.assetIn, inputBalanceBefore);
+        amountOut = _balanceOf(swap.assetOut, swap.recipient) - recipientBefore;
 
         if (amountOut != swap.amountOut) revert SetwiseOutputMismatch(swap.amountOut, amountOut);
     }
@@ -245,8 +249,8 @@ contract SetwiseExecutionAdapter is NativeAccounting, SetwiseRouterAuthorization
     {
         uint256 inputBalanceBefore = _pullExactInput(swap.assetIn, funder, swap.amountIn);
 
-        _forceApprove(swap.assetIn, address(pool), swap.amountIn);
         uint256 recipientBefore = swap.recipient.balance;
+        _forceApprove(swap.assetIn, address(pool), swap.amountIn);
         pool.swapExactAssetForNative(
             swap.assetIn,
             swap.amountIn,
