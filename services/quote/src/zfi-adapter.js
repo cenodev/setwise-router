@@ -192,9 +192,11 @@ function routeLimit(mode, route, slippageBps) {
 /**
  * Structured description of a selected route's path and split proportions,
  * encoded as JSON in the route's evidence `message` so the chosen on-chain
- * route can be reconstructed from response evidence. Each leg reports its swap
- * venue, fee, amounts, and (for split/hybrid routes) its share of the total
- * input in basis points.
+ * route can be reconstructed from response evidence. Every route reports its
+ * ordered legs (swap venue, fee, amounts). Parallel split routes — whose legs
+ * sum to the total input — additionally report each leg's `proportionBps`
+ * share of the input; sequential path routes (multi-hop, three-hop) report the
+ * hop order without split proportions.
  * @param {string} label  Route-builder label (direct, multi-hop, split, ...).
  * @param {object} route  Decoded route `{ amountIn, amountOut, legs }`.
  * @param {string} mode   Quote exact-mode.
@@ -202,22 +204,30 @@ function routeLimit(mode, route, slippageBps) {
  */
 function routePathMessage(label, route, mode) {
   const totalIn = BigInt(route.amountIn);
-  const legs = (route.legs ?? []).map((leg) => ({
-    source: leg.source,
-    feeBps: leg.feeBps,
-    amountIn: leg.amountIn,
-    amountOut: leg.amountOut,
-    proportionBps:
-      totalIn > 0n
-        ? Number((BigInt(leg.amountIn) * 10_000n) / totalIn)
-        : 0,
-  }));
+  const legs = route.legs ?? [];
+  const legsSum = legs.reduce((sum, leg) => sum + BigInt(leg.amountIn), 0n);
+  const isSplit = legs.length > 0 && legsSum === totalIn;
+  const describedLegs = legs.map((leg) => {
+    const described = {
+      source: leg.source,
+      feeBps: leg.feeBps,
+      amountIn: leg.amountIn,
+      amountOut: leg.amountOut,
+    };
+    if (isSplit) {
+      described.proportionBps =
+        totalIn > 0n
+          ? Number((BigInt(leg.amountIn) * 10_000n) / totalIn)
+          : 0;
+    }
+    return described;
+  });
   return JSON.stringify({
     builder: label,
     mode,
     amountIn: route.amountIn,
     amountOut: route.amountOut,
-    legs,
+    legs: describedLegs,
   });
 }
 

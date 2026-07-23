@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "route": "external",
+    "source": "aggregator",
+    "mode": "exact-input",
+    "description": "External 0x aggregator route; fees, gas, and the HTTP reference are reported alongside the normalized amounts."
+  },
+  "request": {
+    "apiVersion": "v1",
+    "chainId": 8453,
+    "tokenIn": { "chainId": 8453, "address": "0x0000000000000000000000000000000000000011" },
+    "tokenOut": { "chainId": 8453, "address": "0x0000000000000000000000000000000000000022" },
+    "router": { "chainId": 8453, "address": "0x0000000000000000000000000000000000000033" },
+    "mode": "exact-input",
+    "amount": "1000000",
+    "recipient": { "chainId": 8453, "address": "0x0000000000000000000000000000000000000044" },
+    "funder": { "chainId": 8453, "address": "0x0000000000000000000000000000000000000055" },
+    "slippage": { "maxBps": 50 }
+  },
+  "response": {
+    "apiVersion": "v1",
+    "requestId": "req_route_external_exact_input",
+    "chainId": 8453,
+    "mode": "exact-input",
+    "kind": "indicative",
+    "selectedSourceId": "zeroex",
+    "sources": [
+      {
+        "source": { "id": "zeroex", "type": "aggregator", "displayName": "0x" },
+        "status": "available",
+        "quote": {
+          "kind": "indicative",
+          "amounts": { "input": "1000000", "output": "2487500", "limit": "2462625" },
+          "gas": { "estimatedUnits": "185000", "estimatedCost": "222000000000000" },
+          "fees": [
+            {
+              "type": "protocol",
+              "amount": "1243",
+              "token": { "chainId": 8453, "address": "0x0000000000000000000000000000000000000022" }
+            },
+            {
+              "type": "network",
+              "amount": "222000000000000",
+              "token": { "chainId": 8453, "address": "0x0000000000000000000000000000000000000022" }
+            }
+          ],
+          "approvalTarget": null,
+          "expiresAt": null
+        },
+        "evidence": [
+          {
+            "kind": "http",
+            "observedAt": "2026-07-22T20:00:00.000Z",
+            "reference": "zeroex:indicative:8453",
+            "blockNumber": "20312456"
+          }
+        ]
+      }
+    ],
+    "transaction": null
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "route": "composite",
+    "source": "zfi",
+    "mode": "exact-output",
+    "description": "Multi-hop ZFi route for an exact output; an exact-input-only split source is explicitly excluded with policy evidence."
+  },
+  "request": {
+    "apiVersion": "v1",
+    "chainId": 8453,
+    "tokenIn": { "chainId": 8453, "address": "0x0000000000000000000000000000000000000011" },
+    "tokenOut": { "chainId": 8453, "address": "0x0000000000000000000000000000000000000022" },
+    "router": { "chainId": 8453, "address": "0x0000000000000000000000000000000000000033" },
+    "mode": "exact-output",
+    "amount": "2500000",
+    "recipient": { "chainId": 8453, "address": "0x0000000000000000000000000000000000000044" },
+    "funder": { "chainId": 8453, "address": "0x0000000000000000000000000000000000000055" },
+    "slippage": { "maxBps": 50 }
+  },
+  "response": {
+    "apiVersion": "v1",
+    "requestId": "req_route_composite_exact_output",
+    "chainId": 8453,
+    "mode": "exact-output",
+    "kind": "indicative",
+    "selectedSourceId": "zfi",
+    "sources": [
+      {
+        "source": { "id": "zfi", "type": "zfi", "displayName": "ZFi" },
+        "status": "available",
+        "quote": {
+          "kind": "indicative",
+          "amounts": { "input": "1008000", "output": "2500000", "limit": "1013040" },
+          "gas": { "estimatedUnits": "260000", "estimatedCost": "33800000000000" },
+          "fees": [],
+          "approvalTarget": null,
+          "expiresAt": null
+        },
+        "evidence": [
+          {
+            "kind": "onchain",
+            "observedAt": "2026-07-22T20:00:00.000Z",
+            "reference": "zfi:multi-hop",
+            "blockNumber": "123456",
+            "message": "{\"builder\":\"multi-hop\",\"mode\":\"exact-output\",\"amountIn\":\"1008000\",\"amountOut\":\"2500000\",\"legs\":[{\"source\":\"3\",\"feeBps\":\"5\",\"amountIn\":\"1008000\",\"amountOut\":\"1256000000000000000\"},{\"source\":\"3\",\"feeBps\":\"5\",\"amountIn\":\"1256000000000000000\",\"amountOut\":\"2500000\"}]}"
+          }
+        ]
+      },
+      {
+        "source": { "id": "zfi-split", "type": "zfi", "displayName": "ZFi split" },
+        "status": "excluded",
+        "quote": null,
+        "evidence": [
+          {
+            "kind": "policy",
+            "observedAt": "2026-07-22T20:00:00.000Z",
+            "reference": "zfi-split:capability",
+            "code": "UNSUPPORTED_MODE",
+            "message": "source does not support this exact-mode"
+          }
+        ]
+      }
+    ],
+    "transaction": null
+  }
+}
