@@ -148,7 +148,10 @@
         "additionalProperties": false,
         "required": ["type", "amount", "token"],
         "properties": {
-          "type": { "type": "string", "enum": ["network", "protocol", "source"] },
+          "type": {
+            "type": "string",
+            "enum": ["network", "protocol", "source", "integrator"]
+          },
           "amount": { "$ref": "#/components/schemas/Uint" },
           "token": { "$ref": "#/components/schemas/ChainAddress" }
         }
@@ -168,6 +171,69 @@
           "expiresAt": { "type": ["string", "null"], "format": "date-time" }
         }
       },
+      "RankingAdjustment": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "amount", "token", "comparisonAmount", "status"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["protocol-fee", "integrator-fee", "gas", "approval"]
+          },
+          "amount": {
+            "oneOf": [{ "$ref": "#/components/schemas/Uint" }, { "type": "null" }]
+          },
+          "token": { "$ref": "#/components/schemas/ChainAddress" },
+          "comparisonAmount": {
+            "oneOf": [{ "$ref": "#/components/schemas/Uint" }, { "type": "null" }]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["applied", "not-required", "missing-estimate", "missing-price"]
+          }
+        }
+      },
+      "RankingThresholds": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["minimumImprovementBps", "minimumImprovementAmount"],
+        "properties": {
+          "minimumImprovementBps": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "minimumImprovementAmount": { "$ref": "#/components/schemas/Uint" }
+        }
+      },
+      "RouteRanking": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status",
+          "comparisonToken",
+          "rawAmount",
+          "adjustedAmount",
+          "adjustments",
+          "thresholds",
+          "fallback"
+        ],
+        "properties": {
+          "status": { "type": "string", "enum": ["complete", "unpriced"] },
+          "comparisonToken": { "$ref": "#/components/schemas/ChainAddress" },
+          "rawAmount": { "$ref": "#/components/schemas/PositiveUint" },
+          "adjustedAmount": {
+            "oneOf": [{ "$ref": "#/components/schemas/Uint" }, { "type": "null" }]
+          },
+          "adjustments": {
+            "type": "array",
+            "minItems": 4,
+            "items": { "$ref": "#/components/schemas/RankingAdjustment" }
+          },
+          "thresholds": { "$ref": "#/components/schemas/RankingThresholds" },
+          "fallback": { "type": "string", "enum": ["none", "raw-amount"] }
+        }
+      },
       "SourceOutcome": {
         "type": "object",
         "additionalProperties": false,
@@ -185,7 +251,8 @@
             "type": "array",
             "minItems": 1,
             "items": { "$ref": "#/components/schemas/Evidence" }
-          }
+          },
+          "ranking": { "$ref": "#/components/schemas/RouteRanking" }
         }
       },
       "Transaction": {

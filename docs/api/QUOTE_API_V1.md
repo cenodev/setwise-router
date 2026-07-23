@@ -22,7 +22,9 @@ request, response, source-state, and error examples live in
 Every source returns an outcome with evidence. `available`, `unavailable`,
 `excluded`, `stale`, and `failed` are distinct states; a stale outcome may retain
 its normalized quote for diagnostics but cannot be selected. A quote normalizes
-input/output/limit amounts, gas, fees, approval target, and expiry.
+input/output/limit amounts, gas, fees, approval target, and expiry. Quoted
+routes additionally expose a structured `ranking` record with raw and adjusted
+amounts, every cost adjustment, pricing status, thresholds, and fallback.
 
 `kind: indicative` cannot carry an approval target or transaction. `kind: firm`
 requires a selected available source, an expiry, and exactly one top-level
@@ -57,6 +59,44 @@ side always equals the request `amount`:
 request they are not selectable; a source that supports only `exact-input`
 appears with `status: "excluded"` and `UNSUPPORTED_MODE` policy evidence.
 
+## Net executable outcome ranking
+
+Routes are compared in the token on the non-exact side:
+
+- `exact-input` maximizes output after subtracting protocol fees, integrator
+  fees, execution gas, and any approval gas.
+- `exact-output` minimizes required input after adding those costs.
+
+`source` remains accepted as the legacy fee name, but is ranked as an
+integrator fee. `network` fees are already represented by
+`gas.estimatedCost` and are not charged twice. Firm quotes with a non-null
+approval target include the default 46,000-unit approval estimate; callers may
+override it globally or per source. The route's gas cost and units provide its
+gas price when possible, or the caller may provide one explicitly.
+
+Token conversion uses caller-supplied direct rational records:
+`fromAmount` units of `fromToken` equal `toAmount` units of `toToken`. Conversion
+rounds costs up and uses BigInt throughout, so 6-, 8-, and 18-decimal assets do
+not lose precision. No inverse, multi-hop, RWA, or oracle price is inferred.
+
+The default minimum-improvement band is the greater of 1 basis point and one
+smallest comparison-token unit. Routes inside the band are equivalent and the
+lexicographically smallest source ID wins, making selection independent of
+adapter completion order. Callers can override either threshold.
+
+If gas units, gas price, or a direct conversion is missing, the affected
+adjustment reports `missing-estimate` or `missing-price`, the ranking is
+`unpriced`, and `adjustedAmount` is `null`. Fully priced routes outrank unpriced
+routes. If every viable route is unpriced, selection explicitly falls back to
+the raw exact-mode amount. The response appends `UNPRICED_ADJUSTMENTS` policy
+evidence and preserves source warnings such as RWA price warnings; it never
+manufactures a missing price.
+
+Deterministic fixtures under
+[`services/quote/fixtures/ranking/`](../../services/quote/fixtures/ranking/)
+cover Ethereum, BSC, Base, and Robinhood Chain native gas costs across 6-, 8-,
+and 18-decimal comparison tokens.
+
 ## Conservative rounding
 
 Slippage limits are rounded so a limit never over-promises, using BigInt math
@@ -73,12 +113,14 @@ that preserves token-decimal precision:
 Every source outcome carries non-empty evidence, and the response preserves the
 selected route and every rejected route. The selected route is reconstructable
 from its outcome: the normalized quote reports input/output/limit amounts, gas,
-fees, slippage limit, approval target, and expiry, and the evidence reports the
-source path. ZFi evidence encodes the chosen builder and its ordered legs (swap
-venue, fee, amounts); parallel split routes additionally report each leg's
-`proportionBps` share of the input (summing to 10,000). Set evidence records
-pool identity, inventory snapshot, and price decomposition. Aggregator evidence
-records the HTTP reference and block number.
+fees, slippage limit, approval target, and expiry. Its ranking record and
+`ranking:<sourceId>` policy evidence preserve the raw amount, adjusted amount,
+individual costs, missing-price state, thresholds, and fallback. ZFi evidence
+encodes the chosen builder and its ordered legs (swap venue, fee, amounts);
+parallel split routes additionally report each leg's `proportionBps` share of
+the input (summing to 10,000). Set evidence records pool identity, inventory
+snapshot, and price decomposition. Aggregator evidence records the HTTP
+reference and block number.
 
 ## Terminology
 

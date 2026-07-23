@@ -300,15 +300,188 @@ function validateFee(value, chain, path) {
     path,
     QUOTE_ERROR_CODES.INVALID_RESPONSE,
   );
-  if (!["network", "protocol", "source"].includes(value.type)) {
+  if (!["network", "protocol", "source", "integrator"].includes(value.type)) {
     fail(
       QUOTE_ERROR_CODES.INVALID_RESPONSE,
-      `${path}.type must be network, protocol, or source`,
+      `${path}.type must be network, protocol, source, or integrator`,
       `${path}.type`,
     );
   }
   uint(value.amount, `${path}.amount`);
   chainAddress(value.token, chain, `${path}.token`);
+}
+
+function validateRanking(value, quote, request, path) {
+  object(value, path, QUOTE_ERROR_CODES.INVALID_RESPONSE);
+  keys(
+    value,
+    [
+      "status",
+      "comparisonToken",
+      "rawAmount",
+      "adjustedAmount",
+      "adjustments",
+      "thresholds",
+      "fallback",
+    ],
+    [],
+    path,
+    QUOTE_ERROR_CODES.INVALID_RESPONSE,
+  );
+  if (!["complete", "unpriced"].includes(value.status)) {
+    fail(
+      QUOTE_ERROR_CODES.INVALID_RESPONSE,
+      `${path}.status must be complete or unpriced`,
+      `${path}.status`,
+    );
+  }
+  chainAddress(value.comparisonToken, request.chainId, `${path}.comparisonToken`);
+  const expectedToken =
+    request.mode === "exact-input" ? request.tokenOut : request.tokenIn;
+  if (
+    value.comparisonToken.address.toLowerCase() !==
+    expectedToken.address.toLowerCase()
+  ) {
+    fail(
+      QUOTE_ERROR_CODES.INVALID_RESPONSE,
+      `${path}.comparisonToken must match the exact-mode comparison token`,
+      `${path}.comparisonToken`,
+    );
+  }
+  uint(value.rawAmount, `${path}.rawAmount`, { positive: true });
+  const expectedRaw =
+    request.mode === "exact-input" ? quote.amounts.output : quote.amounts.input;
+  if (value.rawAmount !== expectedRaw) {
+    fail(
+      QUOTE_ERROR_CODES.INVALID_RESPONSE,
+      `${path}.rawAmount must preserve the quoted exact-mode amount`,
+      `${path}.rawAmount`,
+    );
+  }
+  if (value.adjustedAmount !== null) {
+    uint(value.adjustedAmount, `${path}.adjustedAmount`);
+  }
+  if (
+    (value.status === "complete" && value.adjustedAmount === null) ||
+    (value.status === "unpriced" && value.adjustedAmount !== null)
+  ) {
+    fail(
+      QUOTE_ERROR_CODES.INVALID_RESPONSE,
+      `${path}.adjustedAmount must be present only for complete rankings`,
+      `${path}.adjustedAmount`,
+    );
+  }
+  if (!Array.isArray(value.adjustments) || value.adjustments.length < 4) {
+    fail(
+      QUOTE_ERROR_CODES.INVALID_RESPONSE,
+      `${path}.adjustments must expose protocol, integrator, gas, and approval costs`,
+      `${path}.adjustments`,
+    );
+  }
+  const adjustmentTypes = new Set();
+  let hasUnpricedAdjustment = false;
+  value.adjustments.forEach((item, index) => {
+    const itemPath = `${path}.adjustments[${index}]`;
+    object(item, itemPath, QUOTE_ERROR_CODES.INVALID_RESPONSE);
+    keys(
+      item,
+      ["type", "amount", "token", "comparisonAmount", "status"],
+      [],
+      itemPath,
+      QUOTE_ERROR_CODES.INVALID_RESPONSE,
+    );
+    if (!["protocol-fee", "integrator-fee", "gas", "approval"].includes(item.type)) {
+      fail(
+        QUOTE_ERROR_CODES.INVALID_RESPONSE,
+        `${itemPath}.type is not a ranking adjustment`,
+        `${itemPath}.type`,
+      );
+    }
+    adjustmentTypes.add(item.type);
+    if (item.amount !== null) uint(item.amount, `${itemPath}.amount`);
+    chainAddress(item.token, request.chainId, `${itemPath}.token`);
+    if (item.comparisonAmount !== null) {
+      uint(item.comparisonAmount, `${itemPath}.comparisonAmount`);
+    }
+    if (
+      !["applied", "not-required", "missing-estimate", "missing-price"].includes(
+        item.status,
+      )
+    ) {
+      fail(
+        QUOTE_ERROR_CODES.INVALID_RESPONSE,
+        `${itemPath}.status is not supported`,
+        `${itemPath}.status`,
+      );
+    }
+    if (!["applied", "not-required"].includes(item.status)) {
+      hasUnpricedAdjustment = true;
+    }
+  });
+  for (const requiredType of [
+    "protocol-fee",
+    "integrator-fee",
+    "gas",
+    "approval",
+  ]) {
+    if (!adjustmentTypes.has(requiredType)) {
+      fail(
+        QUOTE_ERROR_CODES.INVALID_RESPONSE,
+        `${path}.adjustments must include ${requiredType}`,
+        `${path}.adjustments`,
+      );
+    }
+  }
+  if (
+    (value.status === "complete" && hasUnpricedAdjustment) ||
+    (value.status === "unpriced" && !hasUnpricedAdjustment)
+  ) {
+    fail(
+      QUOTE_ERROR_CODES.INVALID_RESPONSE,
+      `${path}.status must reflect its adjustment pricing statuses`,
+      `${path}.status`,
+    );
+  }
+  object(value.thresholds, `${path}.thresholds`, QUOTE_ERROR_CODES.INVALID_RESPONSE);
+  keys(
+    value.thresholds,
+    ["minimumImprovementBps", "minimumImprovementAmount"],
+    [],
+    `${path}.thresholds`,
+    QUOTE_ERROR_CODES.INVALID_RESPONSE,
+  );
+  if (
+    !Number.isInteger(value.thresholds.minimumImprovementBps) ||
+    value.thresholds.minimumImprovementBps < 0 ||
+    value.thresholds.minimumImprovementBps > 10_000
+  ) {
+    fail(
+      QUOTE_ERROR_CODES.INVALID_RESPONSE,
+      `${path}.thresholds.minimumImprovementBps must be an integer from 0 through 10000`,
+      `${path}.thresholds.minimumImprovementBps`,
+    );
+  }
+  uint(
+    value.thresholds.minimumImprovementAmount,
+    `${path}.thresholds.minimumImprovementAmount`,
+  );
+  if (!["none", "raw-amount"].includes(value.fallback)) {
+    fail(
+      QUOTE_ERROR_CODES.INVALID_RESPONSE,
+      `${path}.fallback must be none or raw-amount`,
+      `${path}.fallback`,
+    );
+  }
+  if (
+    (value.status === "complete" && value.fallback !== "none") ||
+    (value.status === "unpriced" && value.fallback !== "raw-amount")
+  ) {
+    fail(
+      QUOTE_ERROR_CODES.INVALID_RESPONSE,
+      `${path}.fallback must match the ranking status`,
+      `${path}.fallback`,
+    );
+  }
 }
 
 function validateNormalizedQuote(value, request, responseKind, path) {
@@ -495,7 +668,7 @@ export function validateQuoteResponse(input, requestInput) {
     keys(
       outcome,
       ["source", "status", "quote", "evidence"],
-      [],
+      ["ranking"],
       path,
       QUOTE_ERROR_CODES.INVALID_RESPONSE,
     );
@@ -526,14 +699,26 @@ export function validateQuoteResponse(input, requestInput) {
         );
       }
       validateNormalizedQuote(outcome.quote, request, input.kind, `${path}.quote`);
+      if ("ranking" in outcome) {
+        validateRanking(outcome.ranking, outcome.quote, request, `${path}.ranking`);
+      }
       selectable.add(outcome.source.id);
     } else if (outcome.status === "stale" && outcome.quote !== null) {
       validateNormalizedQuote(outcome.quote, request, input.kind, `${path}.quote`);
+      if ("ranking" in outcome) {
+        validateRanking(outcome.ranking, outcome.quote, request, `${path}.ranking`);
+      }
     } else if (outcome.quote !== null) {
       fail(
         QUOTE_ERROR_CODES.INVALID_RESPONSE,
         `${outcome.status} sources must use a null quote`,
         `${path}.quote`,
+      );
+    } else if ("ranking" in outcome) {
+      fail(
+        QUOTE_ERROR_CODES.INVALID_RESPONSE,
+        `${outcome.status} sources cannot carry ranking data`,
+        `${path}.ranking`,
       );
     }
   });

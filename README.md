@@ -254,8 +254,10 @@ The quote service exports strict validators for the versioned, chain-aware
 `v1` request, response, and error models shared by ZFi, aggregator, and Set
 sources. Requests bind every token, router, funder, and recipient to the selected
 chain. Responses normalize source outcomes, amounts, gas, fees, approvals,
-expiry, evidence, calldata, and native value; indicative responses cannot carry
-an executable transaction, while firm responses contain exactly one.
+expiry, evidence, calldata, and native value; gas- and fee-adjusted ranking
+exposes every cost and missing-price fallback without inventing RWA prices.
+Indicative responses cannot carry an executable transaction, while firm
+responses contain exactly one.
 
 - [`docs/api/QUOTE_API_V1.md`](./docs/api/QUOTE_API_V1.md) — invariants,
   source-state semantics, transaction rules, and stable error codes.

@@ -1,0 +1,37 @@
+{
+  "chainId": 1,
+  "nativeSymbol": "ETH",
+  "mode": "exact-input",
+  "inputDecimals": 18,
+  "outputDecimals": 6,
+  "tokenIn": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+  "tokenOut": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  "conversion": {
+    "fromToken": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "toToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "fromAmount": "1000000000000000000",
+    "toAmount": "2000000000"
+  },
+  "routes": [
+    {
+      "id": "raw-best",
+      "input": "1000000000000000000",
+      "output": "2500000000",
+      "gasUnits": "100000",
+      "gasCost": "1000000000000000",
+      "fees": []
+    },
+    {
+      "id": "net-best",
+      "input": "1000000000000000000",
+      "output": "2499000000",
+      "gasUnits": "100000",
+      "gasCost": "100000000000000",
+      "fees": [
+        { "type": "protocol", "amount": "100000" },
+        { "type": "integrator", "amount": "50000" }
+      ]
+    }
+  ],
+  "expectedSourceId": "net-best"
+}
