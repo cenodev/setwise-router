@@ -51,9 +51,10 @@ side always equals the request `amount`:
   amounts are preserved; the limit is the reported `minBuyAmount` (exact-input)
   or `maxSellAmount` (exact-output). Fees, gas, and approval metadata pass
   through unmodified.
-- **Set (`setwise`)** — the RFQ indicative amounts are preserved and the limit
-  is derived from the quoted amount and slippage tolerance. Set sources are
-  indicative-only and never carry an approval target or transaction.
+- **Set (`setwise`)** — indicative amounts are compared without an approval
+  target or transaction. A competitive indication may be replaced by a
+  short-lived firm quote whose approval and transaction are bound to the
+  requested router.
 
 `split` and `hybrid` builders are exact-input only. For an `exact-output`
 request they are not selectable; a source that supports only `exact-input`
@@ -96,6 +97,30 @@ Deterministic fixtures under
 [`services/quote/fixtures/ranking/`](../../services/quote/fixtures/ranking/)
 cover Ethereum, BSC, Base, and Robinhood Chain native gas costs across 6-, 8-,
 and 18-decimal comparison tokens.
+
+## Indicative-to-firm execution
+
+`runSetwiseFirmSelection` implements the executable selection boundary:
+
+1. Run and rank all supported indicative sources. Indicative responses are
+   always non-executable.
+2. Request a short-lived Set firm quote only when Set won the indicative
+   comparison. Request current non-Set firm competitors in parallel.
+3. Reject malformed transactions and quotes that leave less than the
+   submission buffer (15 seconds by default), then re-rank firm amounts and
+   costs.
+4. Simulate the best complete router transaction at the current block
+   (`blockTag: "latest"`). A failed simulation removes that source before the
+   next candidate is ranked.
+5. Recheck expiry after simulation. If no firm candidate survives, return the
+   original indicative response with `transaction: null`.
+
+The workflow returns structured `fallbacks` alongside the schema response.
+Each record identifies `sourceId`, `stage`, `code`, `message`, and `observedAt`.
+Firming, signer, inventory, staleness, expiry, transaction, and simulation
+failures therefore remain distinguishable. The selected quote, approval
+target, and transaction are always lifted from the same surviving source, so
+fallback cannot reuse Set approval metadata for a competitor.
 
 ## Conservative rounding
 
