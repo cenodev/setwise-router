@@ -6,10 +6,11 @@ registered Set pool. User-facing surfaces describe the venue as a **Set**;
 contract, service, and API identifiers retain `pool` / `poolId` terminology.
 
 Native → ERC-20 and ERC-20 → native settlement is issue #13 (see
-[`NATIVE_EXECUTION.md`](./NATIVE_EXECUTION.md)), router transient credit and
-composition are issue #17. Issue #14 hardens allowance and residual accounting
-across every Set path. Direct execution leaves no call-scoped router balance
-delta and no pool allowance.
+[`NATIVE_EXECUTION.md`](./NATIVE_EXECUTION.md)), and router transient credit
+and composition are issue #17 (see
+[`TRANSIENT_CREDIT.md`](./TRANSIENT_CREDIT.md)). Issue #14 hardens allowance
+and residual accounting across every Set path. Direct execution leaves no
+call-scoped router balance delta and no pool allowance.
 
 - Adapter: [`contracts/src/setwise/SetwiseExecutionAdapter.sol`](../../contracts/src/setwise/SetwiseExecutionAdapter.sol)
 - Tests: [`contracts/test/SetwiseExecutionAdapter.t.sol`](../../contracts/test/SetwiseExecutionAdapter.t.sol)
@@ -83,9 +84,13 @@ The body then:
 
 - **Direct user receipt** (`recipient = user`): output settles straight to the
   user; the router ends with zero balance and zero allowance.
-- **Router receipt** (`recipient = address(this)`): the measured output stays
-  in the router, staging it as input for a future composition leg (issue #17).
-  The same balance-delta enforcement applies.
+- **Router receipt** (`recipient = address(this)`): the measured output delta
+  is staged as transaction-scoped transient credit (issue #17) for a later leg
+  in the same transaction. The same balance-delta enforcement applies, and the
+  credit must be consumed before the frame settles — a standalone
+  router-recipient call reverts with `ResidualTokenCredit` instead of leaving
+  funds in the router. See
+  [`TRANSIENT_CREDIT.md`](./TRANSIENT_CREDIT.md).
 
 ## Deployment
 

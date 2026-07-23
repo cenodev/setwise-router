@@ -1,8 +1,9 @@
 # Chain-specific extension capabilities
 
 Issue #11 separates portable routing from Ethereum-specific ZFi extensions
-(Curve, Lido, zAMM, Sushi, NameNFT, and related extensions). The canonical
-source of truth is the typed multi-chain configuration registry
+(Curve, Lido, zAMM, Sushi, NameNFT, and related extensions); issue #17 uses the
+same mechanism to gate Set composite routes. The canonical source of truth is
+the typed multi-chain configuration registry
 ([`config/chains/`](../../config/chains)); the capability metadata lives in
 [`config/capabilities.mjs`](../../config/capabilities.mjs).
 
@@ -19,7 +20,8 @@ known capability explicitly, enabled or not.
 Swap venues (`uniswapV2`, `uniswapV3`, `curve`, `lido`, `zamm`, …) are already
 capability-gated through `venues.<venue>.enabled`. The `capabilities` map covers
 the function-level extensions that are not venues in their own right: the
-Lido staking routes, NameNFT, zAMM liquidity minting, and ownership.
+Lido staking routes, NameNFT, zAMM liquidity minting, ownership, and mixed Set
+composite routes.
 
 ## Capability decisions
 
@@ -29,8 +31,9 @@ Lido staking routes, NameNFT, zAMM liquidity minting, and ownership.
 | `nameNft` | `revealName`, `onERC721Received` | extension | ethereum-only | chain id `1` |
 | `zammLiquidity` | `addLiquidity` | extension | out-of-swap-scope | chain id `1`; `venues.zamm` enabled |
 | `ownership` | `transferOwnership` | extension | retain | none (governed via issue #37) |
+| `setwiseComposition` | `multicall` | extension | disabled | `venues.setwise` enabled; composition audit |
 
-The gated function sets match the baseline `ethereumOnly` lists and the
+The ZFi gated function sets match the baseline `ethereumOnly` lists and the
 non-swap extension decision recorded in
 [`baseline/abi/compatibility-matrix.json`](../../baseline/abi/compatibility-matrix.json);
 `test/capabilities.test.js` asserts the two stay in sync.
@@ -43,15 +46,20 @@ non-swap extension decision recorded in
   execution.
 - **retain** — required for `trust` / `ensureAllowance` administration; kept on
   every chain and governed separately (issue #37).
+- **disabled** — not deployable anywhere yet. Mixed Set composite routes (a Set
+  leg consuming transient credit staged by another venue) stay gated until the
+  composition audit lands; same-venue Set credit accounting itself ships with
+  issue #17 (see
+  [`docs/setwise/TRANSIENT_CREDIT.md`](../setwise/TRANSIENT_CREDIT.md)).
 
 ## Per-chain state
 
-| Chain | `lidoStaking` | `nameNft` | `zammLiquidity` | `ownership` |
-| --- | --- | --- | --- | --- |
-| Ethereum (1) | enabled | enabled | enabled | enabled |
-| BSC (56) | disabled | disabled | disabled | enabled |
-| Base (8453) | disabled | disabled | disabled | enabled |
-| Robinhood (4663) | disabled | disabled | disabled | enabled |
+| Chain | `lidoStaking` | `nameNft` | `zammLiquidity` | `ownership` | `setwiseComposition` |
+| --- | --- | --- | --- | --- | --- |
+| Ethereum (1) | enabled | enabled | enabled | enabled | disabled |
+| BSC (56) | disabled | disabled | disabled | enabled | disabled |
+| Base (8453) | disabled | disabled | disabled | enabled | disabled |
+| Robinhood (4663) | disabled | disabled | disabled | enabled | disabled |
 
 ## ABI behavior when a capability is unavailable
 
