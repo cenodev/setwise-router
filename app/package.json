@@ -8,7 +8,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test test/*.test.js",
-    "lint": "node --check src/index.js src/chains.js src/constants.js src/governance.js src/native.js src/network.js src/quote-session.js src/robinhood.js src/tokens.js scripts/build.mjs test/*.test.js"
+    "lint": "node --check src/index.js src/chains.js src/constants.js src/governance.js src/native.js src/network.js src/quote-session.js src/route-details.js src/robinhood.js src/tokens.js scripts/build.mjs test/*.test.js"
   },
   "engines": {
     "node": ">=22"
