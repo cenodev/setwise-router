@@ -7,9 +7,9 @@ contract, service, and API identifiers retain `pool` / `poolId` terminology.
 
 Native → ERC-20 and ERC-20 → native settlement is issue #13 (see
 [`NATIVE_EXECUTION.md`](./NATIVE_EXECUTION.md)), router transient credit and
-composition are issue #17, and allowance/residual hardening across every Set
-path is issue #14. This path already leaves zero balance delta and zero
-allowance after a direct execution.
+composition are issue #17. Issue #14 hardens allowance and residual accounting
+across every Set path. Direct execution leaves no call-scoped router balance
+delta and no pool allowance.
 
 - Adapter: [`contracts/src/setwise/SetwiseExecutionAdapter.sol`](../../contracts/src/setwise/SetwiseExecutionAdapter.sol)
 - Tests: [`contracts/test/SetwiseExecutionAdapter.t.sol`](../../contracts/test/SetwiseExecutionAdapter.t.sol)
@@ -43,10 +43,14 @@ The body then:
 1. Resolves the settlement mode from the native flags (this mode is
    `ERC20_TO_ERC20`), requires consistent asset normalization, a nonzero
    recipient, and nonzero fixed amounts.
-2. Pulls exactly the authorized input from the funding wallet.
-3. Grants the registered pool the **exact per-swap allowance**
-   (`approve(amountIn)`), calls `swapExactAssetForAsset` with the signed pool
-   quote, then clears the allowance (`approve(0)`).
+2. Snapshots the router input balance, pulls the authorized input, and requires
+   the balance to increase by exactly `amountIn`. Fee-on-transfer input is not
+   supported and reverts before any approval or pool call.
+3. Grants the registered pool the **exact per-swap allowance**. Tokens that
+   require zero-first approval are handled by clearing the old allowance before
+   retrying `approve(amountIn)`. The adapter calls `swapExactAssetForAsset`,
+   clears the allowance immediately after success, then requires the router
+   input balance to equal its pre-call snapshot.
 4. Measures the recipient's output **balance delta** and requires it to equal
    the signed fixed output (`SetwiseOutputMismatch` otherwise).
 5. Emits `SetwiseSwapExecuted` with the complete execution metadata: pool,
@@ -63,10 +67,17 @@ The body then:
   reverts at the pool with `QuoteAlreadyUsed`; the router keeps no second nonce
   store. Caller substitution reverts with `SetwiseAuthorizationWrongCaller`.
 - **Zero residue**: after a direct execution the router holds no input or
-  output tokens and no pool allowance. A revert anywhere discards the pull,
-  the allowance, and the quote consumption, so no partial state survives.
+  output balance delta and no pool allowance. Pre-existing balances are not
+  exposed to the call. A pool that under-consumes input reverts the transaction.
+  A revert anywhere discards the pull, allowance, output, and quote consumption,
+  so no partial state survives.
 - **Fixed result**: the output is enforced by balance-delta measurement, not
   by trusting the pool's return path.
+- **Unsupported token behavior**: fee-on-transfer input and false-returning
+  transfer/approval calls revert atomically.
+- **Reentrancy**: pool and token callbacks cannot enter a second Set execution;
+  sequential `multicall` legs remain supported because the lock clears after
+  each completed leg.
 
 ## Recipient modes
 
@@ -90,12 +101,19 @@ and router control. Constructor misconfiguration reverts (`WrongChain`,
 cd contracts && forge test --match-contract SetwiseExecutionAdapterTest
 ```
 
-The suite runs against the real governed registry and router control (both
+The unit suite runs against the real governed registry and router control (both
 behind ERC-1967 proxies) and a pool mock that faithfully verifies the EIP-712
 `SwapQuote`, enforces the deadline, and consumes quote IDs. It covers exact
 input consumption, signed-recipient delivery, quote replay, caller
 substitution, zero router balance/allowance, revert atomicity, registry and
 kill-switch guard ordering, native-mode settlement (see
 [`NATIVE_EXECUTION.md`](./NATIVE_EXECUTION.md)), output-delta mismatch, router
-receipt, multicall framing, expiry, modified calldata, wrong chain, token
-transfer/approval failures, complete event metadata, and constructor validation.
+receipt, multicall framing, expiry, modified calldata, wrong chain, zero-first
+approval, fee-on-transfer and false-return rejection, malicious-pool underpull,
+reentrancy, complete event metadata, and constructor validation.
+
+`SetwiseExecutionInvariant.t.sol` drives arbitrary one-to-four-leg multicall
+sequences across every asset mode and success, revert, token-failure,
+reentrancy, and malicious-pool behaviors. After every sequence it requires all
+router balances to equal their pre-funded snapshots and every pool allowance
+to be zero.

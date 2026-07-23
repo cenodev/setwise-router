@@ -69,7 +69,9 @@ leaves partial state.
 2. Calls `pool.swapExactAssetForNative(...)`. The pool pulls the input, unwraps
    `amountOut` of wrapped-native, and sends native currency to the recipient.
 3. Clears the allowance, measures the recipient's **native balance delta**, and
-   requires it to equal the signed `amountOut`.
+   requires it to equal the signed `amountOut`. The ERC-20 input balance must
+   also return to its pre-call snapshot, so taxed input and pool underpull
+   revert atomically.
 
 No native value is attached to this mode; the native output comes from the pool's
 unwrap, not from the router, so the router ends with zero native balance.

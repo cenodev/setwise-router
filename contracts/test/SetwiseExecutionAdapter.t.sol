@@ -69,6 +69,8 @@ contract MockExecutionToken {
 
     bool public failTransfers;
     bool public failApprovals;
+    bool public requireZeroBeforeApprove;
+    uint256 public transferFee;
 
     function mint(address account, uint256 amount) external {
         balanceOf[account] += amount;
@@ -82,8 +84,21 @@ contract MockExecutionToken {
         failApprovals = value;
     }
 
+    function setRequireZeroBeforeApprove(bool value) external {
+        requireZeroBeforeApprove = value;
+    }
+
+    function setTransferFee(uint256 value) external {
+        transferFee = value;
+    }
+
+    function setAllowance(address owner, address spender, uint256 amount) external {
+        allowance[owner][spender] = amount;
+    }
+
     function approve(address spender, uint256 amount) external returns (bool) {
         if (failApprovals) return false;
+        if (requireZeroBeforeApprove && amount != 0 && allowance[msg.sender][spender] != 0) return false;
         allowance[msg.sender][spender] = amount;
         return true;
     }
@@ -91,7 +106,7 @@ contract MockExecutionToken {
     function transfer(address to, uint256 amount) external returns (bool) {
         if (failTransfers) return false;
         balanceOf[msg.sender] -= amount;
-        balanceOf[to] += amount;
+        balanceOf[to] += amount - transferFee;
         return true;
     }
 
@@ -101,7 +116,7 @@ contract MockExecutionToken {
         require(allowed >= amount, "insufficient allowance");
         if (allowed != type(uint256).max) allowance[from][msg.sender] = allowed - amount;
         balanceOf[from] -= amount;
-        balanceOf[to] += amount;
+        balanceOf[to] += amount - transferFee;
         return true;
     }
 }
@@ -187,6 +202,9 @@ contract MockSetwiseExecutionPool {
 
     bool public tradingPaused;
     bool public underpayOutput;
+    bool public underpullInput;
+    address public reentryTarget;
+    bytes public reentryCall;
 
     error MockQuoteExpired(uint256 deadline);
 
@@ -204,6 +222,15 @@ contract MockSetwiseExecutionPool {
 
     function setUnderpayOutput(bool value) external {
         underpayOutput = value;
+    }
+
+    function setUnderpullInput(bool value) external {
+        underpullInput = value;
+    }
+
+    function setReentry(address target, bytes calldata callData) external {
+        reentryTarget = target;
+        reentryCall = callData;
     }
 
     function quoteDomainSeparator() public view returns (bytes32) {
@@ -253,7 +280,9 @@ contract MockSetwiseExecutionPool {
         if (!_isValidQuoteSignature(digest, signature)) revert ISetwisePool.InvalidSignature();
 
         usedQuoteIds[quoteId] = true;
-        require(MockExecutionToken(inputAsset).transferFrom(msg.sender, address(this), inputAmount), "pool pull");
+        _attemptReentry();
+        uint256 pulled = underpullInput ? inputAmount - 1 : inputAmount;
+        require(MockExecutionToken(inputAsset).transferFrom(msg.sender, address(this), pulled), "pool pull");
         uint256 paid = underpayOutput ? outputAmount - 1 : outputAmount;
         require(MockExecutionToken(outputAsset).transfer(recipient, paid), "pool pay");
         emit ISetwisePool.SwapExecuted(inputAsset, outputAsset, recipient, inputAmount, paid, auxiliaryData);
@@ -279,6 +308,7 @@ contract MockSetwiseExecutionPool {
         if (msg.value != inputAmount) revert ISetwisePool.InvalidNativeAmount(inputAmount, msg.value);
 
         usedQuoteIds[quoteId] = true;
+        _attemptReentry();
         (bool ok,) = WRAPPED_NATIVE_TOKEN.call{value: inputAmount}("");
         require(ok, "wrap failed");
         uint256 paid = underpayOutput ? outputAmount - 1 : outputAmount;
@@ -305,7 +335,9 @@ contract MockSetwiseExecutionPool {
         if (!_isValidQuoteSignature(digest, signature)) revert ISetwisePool.InvalidSignature();
 
         usedQuoteIds[quoteId] = true;
-        require(MockExecutionToken(inputAsset).transferFrom(msg.sender, address(this), inputAmount), "pool pull");
+        _attemptReentry();
+        uint256 pulled = underpullInput ? inputAmount - 1 : inputAmount;
+        require(MockExecutionToken(inputAsset).transferFrom(msg.sender, address(this), pulled), "pool pull");
         uint256 paid = underpayOutput ? outputAmount - 1 : outputAmount;
         IWrappedNativeToken(WRAPPED_NATIVE_TOKEN).withdraw(paid);
         (bool ok,) = recipient.call{value: paid}("");
@@ -318,6 +350,17 @@ contract MockSetwiseExecutionPool {
         if (quoteId == bytes32(0)) revert ISetwisePool.InvalidQuoteId();
         if (usedQuoteIds[quoteId]) revert ISetwisePool.QuoteAlreadyUsed(quoteId);
         if (block.timestamp > deadline) revert MockQuoteExpired(deadline);
+    }
+
+    function _attemptReentry() internal {
+        if (reentryTarget == address(0)) return;
+        (bool ok, bytes memory reason) = reentryTarget.call(reentryCall);
+        if (!ok) {
+            assembly ("memory-safe") {
+                revert(add(reason, 0x20), mload(reason))
+            }
+        }
+        revert("reentry unexpectedly succeeded");
     }
 
     function _isValidQuoteSignature(bytes32 digest, bytes calldata signature) internal view returns (bool) {
@@ -521,6 +564,18 @@ contract SetwiseExecutionAdapterTest {
         require(tokenOut.allowance(address(adapter), address(pool)) == 0, "router output allowance");
     }
 
+    function testPreExistingRouterBalanceIsExcludedByCallSnapshot() external {
+        uint256 preExistingBalance = 77;
+        tokenIn.mint(address(adapter), preExistingBalance);
+        (SetwiseSwap memory swap, bytes memory authorization) = _fullySignedSwap();
+
+        _execute(swap, authorization);
+
+        require(tokenIn.balanceOf(address(adapter)) == preExistingBalance, "pre-existing input balance changed");
+        require(tokenIn.allowance(address(adapter), address(pool)) == 0, "router pool allowance");
+        require(tokenOut.balanceOf(address(adapter)) == 0, "router output residue");
+    }
+
     // --- acceptance: output is delivered only to the signed recipient --------
 
     function testOutputDeliveredOnlyToSignedRecipient() external {
@@ -590,6 +645,39 @@ contract SetwiseExecutionAdapterTest {
         require(tokenOut.balanceOf(RECIPIENT) == 0, "recipient residue");
         require(tokenIn.allowance(address(adapter), address(pool)) == 0, "residual allowance");
         require(!pool.usedQuoteIds(QUOTE_ID), "quote consumed on revert");
+    }
+
+    function testMaliciousPoolUnderpullRevertsAtomically() external {
+        (SetwiseSwap memory swap, bytes memory authorization) = _fullySignedSwap();
+        pool.setUnderpullInput(true);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(SetwiseExecutionAdapter.SetwiseInputBalanceMismatch.selector, address(tokenIn), 0, 1)
+        );
+        vm.prank(FUNDER);
+        adapter.swapSetwise(swap, FUNDER, authorization);
+
+        require(tokenIn.balanceOf(FUNDER) == AMOUNT_IN * 10, "underpull moved funder input");
+        require(tokenIn.balanceOf(address(adapter)) == 0, "underpull left router input");
+        require(tokenIn.balanceOf(address(pool)) == 0, "underpull credited pool");
+        require(tokenOut.balanceOf(RECIPIENT) == 0, "underpull paid output");
+        require(tokenIn.allowance(address(adapter), address(pool)) == 0, "underpull left allowance");
+        require(!pool.usedQuoteIds(QUOTE_ID), "underpull consumed quote");
+    }
+
+    function testPoolReentrancyRevertsAtomically() external {
+        (SetwiseSwap memory swap, bytes memory authorization) = _fullySignedSwap();
+        pool.setReentry(address(adapter), abi.encodeCall(adapter.swapSetwise, (swap, FUNDER, authorization)));
+
+        vm.expectRevert(abi.encodeWithSelector(SetwiseExecutionAdapter.ReentrantSetwiseExecution.selector));
+        vm.prank(FUNDER);
+        adapter.swapSetwise(swap, FUNDER, authorization);
+
+        require(tokenIn.balanceOf(FUNDER) == AMOUNT_IN * 10, "reentrancy moved funder input");
+        require(tokenIn.balanceOf(address(adapter)) == 0, "reentrancy left router input");
+        require(tokenOut.balanceOf(RECIPIENT) == 0, "reentrancy paid output");
+        require(tokenIn.allowance(address(adapter), address(pool)) == 0, "reentrancy left allowance");
+        require(!pool.usedQuoteIds(QUOTE_ID), "reentrancy consumed quote");
     }
 
     // --- registry and router-control guards ----------------------------------
@@ -1080,6 +1168,53 @@ contract SetwiseExecutionAdapterTest {
         adapter.swapSetwise(swap, FUNDER, authorization);
 
         require(tokenIn.balanceOf(FUNDER) == AMOUNT_IN * 10, "approval failure moved funds");
+    }
+
+    function testForceApproveResetsUsdtStyleAllowance() external {
+        tokenIn.setRequireZeroBeforeApprove(true);
+        tokenIn.setAllowance(address(adapter), address(pool), 1);
+        (SetwiseSwap memory swap, bytes memory authorization) = _fullySignedSwap();
+
+        _execute(swap, authorization);
+
+        require(tokenIn.balanceOf(FUNDER) == AMOUNT_IN * 9, "funder input");
+        require(tokenIn.balanceOf(address(adapter)) == 0, "router input residue");
+        require(tokenIn.allowance(address(adapter), address(pool)) == 0, "allowance not cleared");
+    }
+
+    function testFeeOnTransferInputRevertsBeforePoolCall() external {
+        tokenIn.setTransferFee(1);
+        (SetwiseSwap memory swap, bytes memory authorization) = _fullySignedSwap();
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SetwiseExecutionAdapter.SetwiseInputBalanceMismatch.selector, address(tokenIn), AMOUNT_IN, AMOUNT_IN - 1
+            )
+        );
+        vm.prank(FUNDER);
+        adapter.swapSetwise(swap, FUNDER, authorization);
+
+        require(tokenIn.balanceOf(FUNDER) == AMOUNT_IN * 10, "fee token moved funder input");
+        require(tokenIn.balanceOf(address(adapter)) == 0, "fee token left router input");
+        require(tokenIn.balanceOf(address(pool)) == 0, "fee token reached pool");
+        require(tokenIn.allowance(address(adapter), address(pool)) == 0, "fee token left allowance");
+        require(!pool.usedQuoteIds(QUOTE_ID), "fee token consumed quote");
+    }
+
+    function testFalseReturningOutputRevertsAtomically() external {
+        tokenOut.setFailTransfers(true);
+        (SetwiseSwap memory swap, bytes memory authorization) = _fullySignedSwap();
+
+        vm.expectRevert();
+        vm.prank(FUNDER);
+        adapter.swapSetwise(swap, FUNDER, authorization);
+
+        require(tokenIn.balanceOf(FUNDER) == AMOUNT_IN * 10, "false output moved funder input");
+        require(tokenIn.balanceOf(address(adapter)) == 0, "false output left router input");
+        require(tokenIn.balanceOf(address(pool)) == 0, "false output credited pool");
+        require(tokenOut.balanceOf(RECIPIENT) == 0, "false output paid recipient");
+        require(tokenIn.allowance(address(adapter), address(pool)) == 0, "false output left allowance");
+        require(!pool.usedQuoteIds(QUOTE_ID), "false output consumed quote");
     }
 
     // --- execution metadata ------------------------------------------------------
