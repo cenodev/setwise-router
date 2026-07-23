@@ -66,6 +66,11 @@ jobs:
       - name: Unit tests (workspace + services + app)
         run: npm test && npm run test:services && npm run test:app
 
+      - name: Ethereum differential
+        run: |
+          npm run differential:ethereum -- --report "${RUNNER_TEMP}/ethereum-differential.md"
+          cat "${RUNNER_TEMP}/ethereum-differential.md" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Build config registry outputs
         run: npm run build:config
 
@@ -95,7 +100,7 @@ jobs:
             echo "## Baseline CI"
             echo ""
             echo "Deterministic checks: lint, format, typecheck, unit tests,"
-            echo "contract builds (default + zquoter), EIP-170 bytecode gate,"
+            echo "Ethereum differential parity, contract builds (default + zquoter), EIP-170 bytecode gate,"
             echo "and secret-free Foundry tests."
             echo ""
             echo "Fork suites are intentionally separate — see \`ci-fork\`."

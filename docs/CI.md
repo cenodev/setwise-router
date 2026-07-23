@@ -31,12 +31,13 @@ Neither workflow reads production secrets. Optional repository **variables**
 5. `npm run format`
 6. `npm run typecheck`
 7. `npm test` and `npm run test:services`
-8. `npm run build:config` (typed multi-chain registry outputs)
-9. `npm run verify:deployments` (schema-validated deployment manifests; no RPC)
-10. `npm run build:services`
-11. Default-profile `forge build` + EIP-170 gate for **zRouter**
-12. `zquoter`-profile `forge build` + EIP-170 gate for **zQuoter** (soft headroom fails before the hard 24,576-byte limit)
-13. Secret-free Foundry unit tests (`npm run test:contracts`) — temporary foundry config **without** `eth_rpc_url` for `test/{zSwap,ShareBurner,CollectorVault}.t.sol`, plus `contracts/` Setwise data-type tests
+8. `npm run differential:ethereum` (pinned ZFi-vs-Setwise calldata, outputs, sources, recipient deltas, reverts, and gas report)
+9. `npm run build:config` (typed multi-chain registry outputs)
+10. `npm run verify:deployments` (schema-validated deployment manifests; no RPC)
+11. `npm run build:services`
+12. Default-profile `forge build` + EIP-170 gate for **zRouter**
+13. `zquoter`-profile `forge build` + EIP-170 gate for **zQuoter** (soft headroom fails before the hard 24,576-byte limit)
+14. Secret-free Foundry unit tests (`npm run test:contracts`) — temporary foundry config **without** `eth_rpc_url` for `test/{zSwap,ShareBurner,CollectorVault}.t.sol`, plus `contracts/` Setwise data-type tests
 
 ## What `fork` runs
 
@@ -68,5 +69,6 @@ once `baseline` is stable.
 npm run check            # lint, typecheck, format, tests, bytecode gate, offline forge
 npm run check:bytecode   # rebuilds each profile and gates EIP-170 / soft headroom
 npm run test:contracts   # secret-free Foundry suite
+npm run differential:ethereum  # deterministic Ethereum ZFi parity + gas report
 node scripts/test-contracts-fork.mjs   # upstream + per-chain direct-AMM fork matrix
 ```

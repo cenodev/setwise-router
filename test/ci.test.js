@@ -29,6 +29,7 @@ test("CI workflows exist and pin action majors", () => {
   assert.match(ci, /submodules:\s*recursive/);
   assert.match(ci, /check:bytecode/);
   assert.match(ci, /test:contracts/);
+  assert.match(ci, /differential:ethereum/);
   assert.match(ci, /\.foundry-version/);
 
   assert.match(fork, /name:\s*CI Fork/);
@@ -71,6 +72,8 @@ test("root package.json exposes CI entrypoints", () => {
     "verify:deployments",
     "verify:deployments:on-chain",
     "verify:deployments:checklist",
+    "differential:ethereum",
+    "differential:capture",
     "check",
   ]) {
     assert.ok(pkg.scripts[script], `missing script: ${script}`);
