@@ -1,0 +1,5 @@
+{
+  "schema": "setwise-router/ethereum-differential-allowlist@1",
+  "description": "Reviewed intentional differences only. Wildcards are forbidden and stale entries fail the differential check.",
+  "deviations": []
+}

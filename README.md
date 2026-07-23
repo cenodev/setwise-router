@@ -50,6 +50,25 @@ unexpectedly. The ABI drift check compares the committed fixtures against the
 rebuilt `zFi-main/out` artifacts, so run `npm run build` before `npm test` to
 enable it (it is skipped when artifacts are absent).
 
+## Ethereum differential tests
+
+Issue #16 compares the Setwise compatibility surface with the pinned ZFi
+Ethereum oracle across direct, two-hop, three-hop, split, hybrid, Curve, Lido,
+zAMM, and native routes. The deterministic gate checks request and executable
+calldata, return values, selected sources, recipient balance deltas, revert
+behavior, and gas regressions wherever the pinned fork fixture records them.
+
+```bash
+npm run differential:ethereum
+npm run differential:ethereum -- --report /tmp/ethereum-differential.md
+```
+
+Intentional differences require an exact reviewed entry in
+[`baseline/differential/allowlist.json`](./baseline/differential/allowlist.json);
+wildcard and stale entries fail. Fork fixtures only refresh through the explicit
+`npm run differential:capture` command. See
+[`docs/baseline/ETHEREUM_DIFFERENTIAL.md`](./docs/baseline/ETHEREUM_DIFFERENTIAL.md).
+
 ## Compatibility baseline
 
 Issue #5 captures what "preserve ZFi functionality" means on Ethereum. The
