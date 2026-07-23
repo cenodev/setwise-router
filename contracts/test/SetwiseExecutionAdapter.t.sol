@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 import {ISetwisePool} from "../src/setwise/ISetwisePool.sol";
 import {ISetwisePoolRegistry} from "../src/setwise/ISetwisePoolRegistry.sol";
 import {IRouterControl} from "../src/setwise/IRouterControl.sol";
+import {IWrappedNativeToken} from "../src/setwise/IWrappedNativeToken.sol";
 import {NativeAccounting} from "../src/setwise/NativeToken.sol";
 import {RouterControl} from "../src/setwise/RouterControl.sol";
 import {SetwiseAssetMode, SetwiseSwap, SetwiseSwapLib} from "../src/setwise/SetwiseSwap.sol";
@@ -21,6 +22,7 @@ interface VmExecution {
     function addr(uint256 privateKey) external returns (address);
     function chainId(uint256 newChainId) external;
     function deal(address who, uint256 newBalance) external;
+    function expectRevert() external;
     function expectRevert(bytes calldata revertData) external;
     function prank(address caller) external;
     function recordLogs() external;
@@ -104,6 +106,70 @@ contract MockExecutionToken {
     }
 }
 
+/// @notice WETH9-style wrapped-native token: wrapping mints 1:1 on receive/deposit,
+///         unwrapping burns and returns native currency. Doubles as an ERC-20 so a
+///         wrapped-native (ERC-20) route can pay recipients that reject native.
+contract MockWrappedNative {
+    mapping(address account => uint256 amount) public balanceOf;
+    mapping(address account => mapping(address spender => uint256 amount)) public allowance;
+
+    receive() external payable {
+        balanceOf[msg.sender] += msg.value;
+    }
+
+    function deposit() external payable {
+        balanceOf[msg.sender] += msg.value;
+    }
+
+    function withdraw(uint256 amount) external {
+        balanceOf[msg.sender] -= amount;
+        (bool ok,) = msg.sender.call{value: amount}("");
+        require(ok, "native transfer failed");
+    }
+
+    function approve(address spender, uint256 amount) external returns (bool) {
+        allowance[msg.sender][spender] = amount;
+        return true;
+    }
+
+    function transfer(address to, uint256 amount) external returns (bool) {
+        balanceOf[msg.sender] -= amount;
+        balanceOf[to] += amount;
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint256 amount) external returns (bool) {
+        uint256 allowed = allowance[from][msg.sender];
+        require(allowed >= amount, "insufficient allowance");
+        if (allowed != type(uint256).max) allowance[from][msg.sender] = allowed - amount;
+        balanceOf[from] -= amount;
+        balanceOf[to] += amount;
+        return true;
+    }
+
+    /// @dev Test helper: mint wrapped-native without moving native. Tests back the
+    ///      token with native via `vm.deal` so `withdraw` stays solvent.
+    function mint(address to, uint256 amount) external {
+        balanceOf[to] += amount;
+    }
+}
+
+/// @notice A recipient that accepts native currency and records the receipt.
+contract AcceptingRecipient {
+    uint256 public received;
+
+    receive() external payable {
+        received += msg.value;
+    }
+}
+
+/// @notice A recipient with no receive/fallback: any native transfer to it reverts.
+contract RejectingRecipient {
+    function noop() external pure returns (bool) {
+        return true;
+    }
+}
+
 /// @notice Setwise pool mock faithful to the deployed security model: it
 ///         verifies the EIP-712 `SwapQuote` (payer = msg.sender = the router),
 ///         enforces the deadline, consumes the one-time `quoteId`, then pulls
@@ -128,6 +194,9 @@ contract MockSetwiseExecutionPool {
         QUOTE_SIGNER = signer;
         WRAPPED_NATIVE_TOKEN = wrappedNative_;
     }
+
+    /// @notice Accept native currency freed by a wrapped-native `withdraw`.
+    receive() external payable {}
 
     function setTradingPaused(bool paused) external {
         tradingPaused = paused;
@@ -178,11 +247,7 @@ contract MockSetwiseExecutionPool {
         bytes calldata signature,
         bytes calldata auxiliaryData
     ) external {
-        if (tradingPaused) revert ISetwisePool.TradingPaused();
-        if (quoteId == bytes32(0)) revert ISetwisePool.InvalidQuoteId();
-        if (usedQuoteIds[quoteId]) revert ISetwisePool.QuoteAlreadyUsed(quoteId);
-        if (block.timestamp > deadline) revert MockQuoteExpired(deadline);
-
+        _verifyQuote(quoteId, deadline);
         bytes32 digest =
             quoteDigest(msg.sender, inputAsset, outputAsset, inputAmount, outputAmount, quoteId, deadline, recipient);
         if (!_isValidQuoteSignature(digest, signature)) revert ISetwisePool.InvalidSignature();
@@ -192,6 +257,67 @@ contract MockSetwiseExecutionPool {
         uint256 paid = underpayOutput ? outputAmount - 1 : outputAmount;
         require(MockExecutionToken(outputAsset).transfer(recipient, paid), "pool pay");
         emit ISetwisePool.SwapExecuted(inputAsset, outputAsset, recipient, inputAmount, paid, auxiliaryData);
+    }
+
+    /// @notice Native -> ERC-20. The signed quote's input asset is the wrapped-native
+    ///         token; the pool wraps the attached native input and pays the ERC-20 out.
+    function swapExactNativeForAsset(
+        address outputAsset,
+        uint256 inputAmount,
+        uint256 outputAmount,
+        bytes32 quoteId,
+        uint256 deadline,
+        address recipient,
+        bytes calldata signature,
+        bytes calldata auxiliaryData
+    ) external payable {
+        _verifyQuote(quoteId, deadline);
+        bytes32 digest = quoteDigest(
+            msg.sender, WRAPPED_NATIVE_TOKEN, outputAsset, inputAmount, outputAmount, quoteId, deadline, recipient
+        );
+        if (!_isValidQuoteSignature(digest, signature)) revert ISetwisePool.InvalidSignature();
+        if (msg.value != inputAmount) revert ISetwisePool.InvalidNativeAmount(inputAmount, msg.value);
+
+        usedQuoteIds[quoteId] = true;
+        (bool ok,) = WRAPPED_NATIVE_TOKEN.call{value: inputAmount}("");
+        require(ok, "wrap failed");
+        uint256 paid = underpayOutput ? outputAmount - 1 : outputAmount;
+        require(MockExecutionToken(outputAsset).transfer(recipient, paid), "pool pay");
+        emit ISetwisePool.SwapExecuted(WRAPPED_NATIVE_TOKEN, outputAsset, recipient, inputAmount, paid, auxiliaryData);
+    }
+
+    /// @notice ERC-20 -> native. The signed quote's output asset is the wrapped-native
+    ///         token; the pool pulls the ERC-20 input, unwraps, and sends native out.
+    function swapExactAssetForNative(
+        address inputAsset,
+        uint256 inputAmount,
+        uint256 outputAmount,
+        bytes32 quoteId,
+        uint256 deadline,
+        address recipient,
+        bytes calldata signature,
+        bytes calldata auxiliaryData
+    ) external {
+        _verifyQuote(quoteId, deadline);
+        bytes32 digest = quoteDigest(
+            msg.sender, inputAsset, WRAPPED_NATIVE_TOKEN, inputAmount, outputAmount, quoteId, deadline, recipient
+        );
+        if (!_isValidQuoteSignature(digest, signature)) revert ISetwisePool.InvalidSignature();
+
+        usedQuoteIds[quoteId] = true;
+        require(MockExecutionToken(inputAsset).transferFrom(msg.sender, address(this), inputAmount), "pool pull");
+        uint256 paid = underpayOutput ? outputAmount - 1 : outputAmount;
+        IWrappedNativeToken(WRAPPED_NATIVE_TOKEN).withdraw(paid);
+        (bool ok,) = recipient.call{value: paid}("");
+        require(ok, "native transfer failed");
+        emit ISetwisePool.SwapExecuted(inputAsset, WRAPPED_NATIVE_TOKEN, recipient, inputAmount, paid, auxiliaryData);
+    }
+
+    function _verifyQuote(bytes32 quoteId, uint256 deadline) internal view {
+        if (tradingPaused) revert ISetwisePool.TradingPaused();
+        if (quoteId == bytes32(0)) revert ISetwisePool.InvalidQuoteId();
+        if (usedQuoteIds[quoteId]) revert ISetwisePool.QuoteAlreadyUsed(quoteId);
+        if (block.timestamp > deadline) revert MockQuoteExpired(deadline);
     }
 
     function _isValidQuoteSignature(bytes32 digest, bytes calldata signature) internal view returns (bool) {
@@ -234,7 +360,7 @@ contract SetwiseExecutionAdapterTest {
     address internal signer;
     MockExecutionToken internal tokenIn;
     MockExecutionToken internal tokenOut;
-    MockExecutionToken internal wrappedNative;
+    MockWrappedNative internal wrappedNative;
     MockSetwiseExecutionPool internal pool;
     ISetwisePoolRegistry internal registry;
     IRouterControl internal control;
@@ -247,7 +373,7 @@ contract SetwiseExecutionAdapterTest {
         signer = vm.addr(SIGNER_KEY);
         tokenIn = new MockExecutionToken();
         tokenOut = new MockExecutionToken();
-        wrappedNative = new MockExecutionToken();
+        wrappedNative = new MockWrappedNative();
         pool = new MockSetwiseExecutionPool(signer, address(wrappedNative));
 
         SetwisePoolRegistry registryImpl = new SetwisePoolRegistry();
@@ -270,6 +396,10 @@ contract SetwiseExecutionAdapterTest {
 
         tokenIn.mint(FUNDER, AMOUNT_IN * 10);
         tokenOut.mint(address(pool), AMOUNT_OUT * 10);
+        // Back the pool's wrapped-native liquidity so native-output unwraps are
+        // solvent: mint wrapped-native to the pool and reserve native behind it.
+        wrappedNative.mint(address(pool), AMOUNT_OUT * 10);
+        vm.deal(address(wrappedNative), AMOUNT_OUT * 10);
         vm.prank(FUNDER);
         tokenIn.approve(address(adapter), type(uint256).max);
     }
@@ -288,6 +418,44 @@ contract SetwiseExecutionAdapterTest {
             quoteId: QUOTE_ID,
             deadline: block.timestamp + 1 days,
             recipient: RECIPIENT,
+            signature: "",
+            auxiliaryData: hex"726671"
+        });
+    }
+
+    /// @notice A native → ERC-20 swap. The native leg's quote asset is the
+    ///         wrapped-native token; the caller attaches `amountIn` native value.
+    function _nativeInSwap(address recipient) internal view returns (SetwiseSwap memory) {
+        return SetwiseSwap({
+            pool: address(pool),
+            assetIn: address(wrappedNative),
+            assetOut: address(tokenOut),
+            nativeIn: true,
+            nativeOut: false,
+            amountIn: AMOUNT_IN,
+            amountOut: AMOUNT_OUT,
+            quoteId: QUOTE_ID,
+            deadline: block.timestamp + 1 days,
+            recipient: recipient,
+            signature: "",
+            auxiliaryData: hex"726671"
+        });
+    }
+
+    /// @notice An ERC-20 → native swap. The native leg's quote asset is the
+    ///         wrapped-native token; the pool unwraps and pays native out.
+    function _nativeOutSwap(address recipient) internal view returns (SetwiseSwap memory) {
+        return SetwiseSwap({
+            pool: address(pool),
+            assetIn: address(tokenIn),
+            assetOut: address(wrappedNative),
+            nativeIn: false,
+            nativeOut: true,
+            amountIn: AMOUNT_IN,
+            amountOut: AMOUNT_OUT,
+            quoteId: QUOTE_ID,
+            deadline: block.timestamp + 1 days,
+            recipient: recipient,
             signature: "",
             auxiliaryData: hex"726671"
         });
@@ -479,35 +647,7 @@ contract SetwiseExecutionAdapterTest {
 
     // --- asset modes ----------------------------------------------------------
 
-    function testNativeModesRevert() external {
-        SetwiseSwap memory nativeInSwap = _swap();
-        nativeInSwap.nativeIn = true;
-        nativeInSwap.assetIn = address(wrappedNative);
-        nativeInSwap.signature = _poolQuote(nativeInSwap);
-        bytes memory nativeInAuthorization = _authorization(nativeInSwap, FUNDER);
-
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                SetwiseExecutionAdapter.UnsupportedAssetMode.selector, SetwiseAssetMode.NATIVE_TO_ERC20
-            )
-        );
-        vm.prank(FUNDER);
-        adapter.swapSetwise(nativeInSwap, FUNDER, nativeInAuthorization);
-
-        SetwiseSwap memory nativeOutSwap = _swap();
-        nativeOutSwap.nativeOut = true;
-        nativeOutSwap.assetOut = address(wrappedNative);
-        nativeOutSwap.signature = _poolQuote(nativeOutSwap);
-        bytes memory nativeOutAuthorization = _authorization(nativeOutSwap, FUNDER);
-
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                SetwiseExecutionAdapter.UnsupportedAssetMode.selector, SetwiseAssetMode.ERC20_TO_NATIVE
-            )
-        );
-        vm.prank(FUNDER);
-        adapter.swapSetwise(nativeOutSwap, FUNDER, nativeOutAuthorization);
-
+    function testNativeToNativeReverts() external {
         SetwiseSwap memory nativeBothSwap = _swap();
         nativeBothSwap.nativeIn = true;
         nativeBothSwap.nativeOut = true;
@@ -519,6 +659,275 @@ contract SetwiseExecutionAdapterTest {
         vm.expectRevert(abi.encodeWithSelector(SetwiseSwapLib.NativeToNativeUnsupported.selector));
         vm.prank(FUNDER);
         adapter.swapSetwise(nativeBothSwap, FUNDER, nativeBothAuthorization);
+    }
+
+    // --- acceptance: wrong native flags / wrapped-native addresses revert -----
+
+    function testNativeInWrongWrappedAssetReverts() external {
+        SetwiseSwap memory swap = _nativeInSwap(RECIPIENT);
+        // A native leg must be the wrapped-native token, not an arbitrary ERC-20.
+        swap.assetIn = address(tokenIn);
+        swap.signature = _poolQuote(swap);
+        bytes memory authorization = _authorization(swap, FUNDER);
+
+        vm.expectRevert(abi.encodeWithSelector(SetwiseSwapLib.AssetNormalizationMismatch.selector));
+        vm.deal(FUNDER, AMOUNT_IN);
+        vm.prank(FUNDER);
+        adapter.swapSetwise{value: AMOUNT_IN}(swap, FUNDER, authorization);
+    }
+
+    function testNativeOutWrongWrappedAssetReverts() external {
+        SetwiseSwap memory swap = _nativeOutSwap(RECIPIENT);
+        // A native leg must be the wrapped-native token, not an arbitrary ERC-20.
+        swap.assetOut = address(tokenOut);
+        swap.signature = _poolQuote(swap);
+        bytes memory authorization = _authorization(swap, FUNDER);
+
+        vm.expectRevert(abi.encodeWithSelector(SetwiseSwapLib.AssetNormalizationMismatch.selector));
+        vm.prank(FUNDER);
+        adapter.swapSetwise(swap, FUNDER, authorization);
+    }
+
+    function testNativeInSentinelAssetReverts() external {
+        SetwiseSwap memory swap = _nativeInSwap(RECIPIENT);
+        // The on-chain quote asset for a native leg is wrapped-native, never the
+        // sentinel; the sentinel must be normalized off-chain before signing.
+        swap.assetIn = address(0);
+        swap.signature = _poolQuote(swap);
+        bytes memory authorization = _authorization(swap, FUNDER);
+
+        vm.expectRevert(abi.encodeWithSelector(SetwiseSwapLib.AssetNormalizationMismatch.selector));
+        vm.deal(FUNDER, AMOUNT_IN);
+        vm.prank(FUNDER);
+        adapter.swapSetwise{value: AMOUNT_IN}(swap, FUNDER, authorization);
+    }
+
+    // --- direction: native -> erc20 -------------------------------------------
+
+    function testNativeToErc20EoaRecipient() external {
+        SetwiseSwap memory swap = _nativeInSwap(RECIPIENT);
+        swap.signature = _poolQuote(swap);
+        bytes memory authorization = _authorization(swap, FUNDER);
+
+        vm.deal(FUNDER, AMOUNT_IN);
+        vm.prank(FUNDER);
+        uint256 amountOut = adapter.swapSetwise{value: AMOUNT_IN}(swap, FUNDER, authorization);
+
+        require(amountOut == AMOUNT_OUT, "returned output");
+        require(tokenOut.balanceOf(RECIPIENT) == AMOUNT_OUT, "recipient credited exactly amountOut");
+        require(tokenOut.balanceOf(address(pool)) == AMOUNT_OUT * 9, "pool output debit");
+        require(wrappedNative.balanceOf(address(pool)) == AMOUNT_OUT * 10 + AMOUNT_IN, "pool wrapped native input");
+        require(address(adapter).balance == 0, "router holds no native");
+        require(pool.usedQuoteIds(QUOTE_ID), "quote consumed");
+    }
+
+    function testNativeToErc20ContractRecipient() external {
+        AcceptingRecipient recipient = new AcceptingRecipient();
+        SetwiseSwap memory swap = _nativeInSwap(address(recipient));
+        swap.signature = _poolQuote(swap);
+        bytes memory authorization = _authorization(swap, FUNDER);
+
+        vm.deal(FUNDER, AMOUNT_IN);
+        vm.prank(FUNDER);
+        uint256 amountOut = adapter.swapSetwise{value: AMOUNT_IN}(swap, FUNDER, authorization);
+
+        require(amountOut == AMOUNT_OUT, "returned output");
+        require(tokenOut.balanceOf(address(recipient)) == AMOUNT_OUT, "contract recipient credited");
+        require(address(adapter).balance == 0, "router holds no native");
+    }
+
+    function testNativeToErc20InsufficientValueReverts() external {
+        SetwiseSwap memory swap = _nativeInSwap(RECIPIENT);
+        swap.signature = _poolQuote(swap);
+        bytes memory authorization = _authorization(swap, FUNDER);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(NativeAccounting.InsufficientNativeValue.selector, AMOUNT_IN, AMOUNT_IN - 1)
+        );
+        vm.deal(FUNDER, AMOUNT_IN);
+        vm.prank(FUNDER);
+        adapter.swapSetwise{value: AMOUNT_IN - 1}(swap, FUNDER, authorization);
+
+        require(tokenOut.balanceOf(RECIPIENT) == 0, "recipient paid on insufficient value");
+        require(!pool.usedQuoteIds(QUOTE_ID), "quote consumed on insufficient value");
+    }
+
+    function testNativeToErc20RefundsSurplusByDelta() external {
+        // Pre-fund the router with native that does NOT belong to this call.
+        vm.deal(address(adapter), 5 ether);
+
+        SetwiseSwap memory swap = _nativeInSwap(RECIPIENT);
+        swap.signature = _poolQuote(swap);
+        bytes memory authorization = _authorization(swap, FUNDER);
+
+        // Attach 3 ether but only spend AMOUNT_IN; the surplus must be refunded by
+        // per-call delta and the pre-existing router balance left untouched.
+        vm.deal(FUNDER, 3 ether);
+        uint256 userBefore = FUNDER.balance;
+        vm.prank(FUNDER);
+        adapter.swapSetwise{value: 3 ether}(swap, FUNDER, authorization);
+
+        require(userBefore - FUNDER.balance == AMOUNT_IN, "funder spent exactly amountIn");
+        require(address(adapter).balance == 5 ether, "pre-existing router balance untouched");
+        require(tokenOut.balanceOf(RECIPIENT) == AMOUNT_OUT, "recipient received erc20 out");
+    }
+
+    function testNativeToErc20OutputMismatchReverts() external {
+        SetwiseSwap memory swap = _nativeInSwap(RECIPIENT);
+        swap.signature = _poolQuote(swap);
+        bytes memory authorization = _authorization(swap, FUNDER);
+        pool.setUnderpayOutput(true);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(SetwiseExecutionAdapter.SetwiseOutputMismatch.selector, AMOUNT_OUT, AMOUNT_OUT - 1)
+        );
+        vm.deal(FUNDER, AMOUNT_IN);
+        vm.prank(FUNDER);
+        adapter.swapSetwise{value: AMOUNT_IN}(swap, FUNDER, authorization);
+
+        require(tokenOut.balanceOf(RECIPIENT) == 0, "mismatch paid recipient");
+        require(address(adapter).balance == 0, "router holds native on mismatch");
+        require(!pool.usedQuoteIds(QUOTE_ID), "mismatch consumed quote");
+    }
+
+    function testNativeToErc20RouterReceiptStagesOutput() external {
+        SetwiseSwap memory swap = _nativeInSwap(address(adapter));
+        swap.signature = _poolQuote(swap);
+        bytes memory authorization = _authorization(swap, FUNDER);
+
+        vm.deal(FUNDER, AMOUNT_IN);
+        vm.prank(FUNDER);
+        uint256 amountOut = adapter.swapSetwise{value: AMOUNT_IN}(swap, FUNDER, authorization);
+
+        require(amountOut == AMOUNT_OUT, "router receipt output");
+        require(tokenOut.balanceOf(address(adapter)) == AMOUNT_OUT, "router holds staged output");
+        require(address(adapter).balance == 0, "router holds no native");
+    }
+
+    // --- direction: erc20 -> native -------------------------------------------
+
+    function testErc20ToNativeEoaRecipient() external {
+        SetwiseSwap memory swap = _nativeOutSwap(RECIPIENT);
+        swap.signature = _poolQuote(swap);
+        bytes memory authorization = _authorization(swap, FUNDER);
+
+        uint256 recipientBefore = RECIPIENT.balance;
+        vm.prank(FUNDER);
+        uint256 amountOut = adapter.swapSetwise(swap, FUNDER, authorization);
+
+        require(amountOut == AMOUNT_OUT, "returned output");
+        require(RECIPIENT.balance - recipientBefore == AMOUNT_OUT, "recipient received native out");
+        require(tokenIn.balanceOf(FUNDER) == AMOUNT_IN * 9, "funder debited exactly amountIn");
+        require(tokenIn.balanceOf(address(pool)) == AMOUNT_IN, "pool credited exactly amountIn");
+        require(tokenIn.balanceOf(address(adapter)) == 0, "router input balance");
+        require(tokenIn.allowance(address(adapter), address(pool)) == 0, "router pool allowance");
+        require(address(adapter).balance == 0, "router holds no native");
+        require(pool.usedQuoteIds(QUOTE_ID), "quote consumed");
+    }
+
+    function testErc20ToNativeContractRecipient() external {
+        AcceptingRecipient recipient = new AcceptingRecipient();
+        SetwiseSwap memory swap = _nativeOutSwap(address(recipient));
+        swap.signature = _poolQuote(swap);
+        bytes memory authorization = _authorization(swap, FUNDER);
+
+        vm.prank(FUNDER);
+        uint256 amountOut = adapter.swapSetwise(swap, FUNDER, authorization);
+
+        require(amountOut == AMOUNT_OUT, "returned output");
+        require(recipient.received() == AMOUNT_OUT, "contract recipient received native");
+        require(address(adapter).balance == 0, "router holds no native");
+    }
+
+    function testErc20ToNativeRejectingRecipientReverts() external {
+        RejectingRecipient recipient = new RejectingRecipient();
+        SetwiseSwap memory swap = _nativeOutSwap(address(recipient));
+        swap.signature = _poolQuote(swap);
+        bytes memory authorization = _authorization(swap, FUNDER);
+
+        // A recipient with no receive/fallback rejects the pool's native transfer,
+        // reverting the whole swap with no partial state.
+        vm.expectRevert();
+        vm.prank(FUNDER);
+        adapter.swapSetwise(swap, FUNDER, authorization);
+
+        require(tokenIn.balanceOf(FUNDER) == AMOUNT_IN * 10, "funder balance restored");
+        require(tokenIn.balanceOf(address(adapter)) == 0, "router input residue");
+        require(tokenIn.allowance(address(adapter), address(pool)) == 0, "residual allowance");
+        require(address(recipient).balance == 0, "rejecting recipient received native");
+        require(!pool.usedQuoteIds(QUOTE_ID), "quote consumed on revert");
+    }
+
+    function testWrappedNativeRoutePaysRejectingRecipient() external {
+        // The supported alternative for a recipient that rejects native: settle the
+        // output leg as wrapped-native (an ERC-20) via the ERC-20 → ERC-20 path.
+        RejectingRecipient recipient = new RejectingRecipient();
+        SetwiseSwap memory swap = _swap();
+        swap.assetOut = address(wrappedNative);
+        swap.recipient = address(recipient);
+        swap.signature = _poolQuote(swap);
+        bytes memory authorization = _authorization(swap, FUNDER);
+
+        vm.prank(FUNDER);
+        uint256 amountOut = adapter.swapSetwise(swap, FUNDER, authorization);
+
+        require(amountOut == AMOUNT_OUT, "returned output");
+        require(wrappedNative.balanceOf(address(recipient)) == AMOUNT_OUT, "recipient credited wrapped-native");
+    }
+
+    function testErc20ToNativeRejectsAttachedValue() external {
+        SetwiseSwap memory swap = _nativeOutSwap(RECIPIENT);
+        swap.signature = _poolQuote(swap);
+        bytes memory authorization = _authorization(swap, FUNDER);
+
+        vm.deal(FUNDER, 1);
+        vm.prank(FUNDER);
+        vm.expectRevert(abi.encodeWithSelector(NativeAccounting.UnexpectedNativeValue.selector, 1));
+        adapter.swapSetwise{value: 1}(swap, FUNDER, authorization);
+    }
+
+    function testErc20ToNativeOutputMismatchReverts() external {
+        SetwiseSwap memory swap = _nativeOutSwap(RECIPIENT);
+        swap.signature = _poolQuote(swap);
+        bytes memory authorization = _authorization(swap, FUNDER);
+        pool.setUnderpayOutput(true);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(SetwiseExecutionAdapter.SetwiseOutputMismatch.selector, AMOUNT_OUT, AMOUNT_OUT - 1)
+        );
+        vm.prank(FUNDER);
+        adapter.swapSetwise(swap, FUNDER, authorization);
+
+        require(RECIPIENT.balance == 0, "mismatch paid recipient");
+        require(tokenIn.balanceOf(FUNDER) == AMOUNT_IN * 10, "mismatch moved funds");
+        require(tokenIn.allowance(address(adapter), address(pool)) == 0, "mismatch left allowance");
+        require(!pool.usedQuoteIds(QUOTE_ID), "mismatch consumed quote");
+    }
+
+    function testNativeToErc20EmitsMetadata() external {
+        SetwiseSwap memory swap = _nativeInSwap(RECIPIENT);
+        swap.signature = _poolQuote(swap);
+        bytes memory authorization = _authorization(swap, FUNDER);
+
+        vm.recordLogs();
+        vm.deal(FUNDER, AMOUNT_IN);
+        vm.prank(FUNDER);
+        adapter.swapSetwise{value: AMOUNT_IN}(swap, FUNDER, authorization);
+
+        VmExecution.Log[] memory logs = vm.getRecordedLogs();
+        uint256 found;
+        for (uint256 i = 0; i < logs.length; ++i) {
+            if (logs[i].emitter != address(adapter) || logs[i].topics[0] != EXECUTED_TOPIC) continue;
+            found += 1;
+            (address recipient, address assetIn, address assetOut, uint256 amountIn, uint256 amountOut) =
+                abi.decode(logs[i].data, (address, address, address, uint256, uint256));
+            require(recipient == RECIPIENT, "recipient field");
+            require(assetIn == address(wrappedNative), "assetIn is wrapped-native");
+            require(assetOut == address(tokenOut), "assetOut field");
+            require(amountIn == AMOUNT_IN, "amountIn field");
+            require(amountOut == AMOUNT_OUT, "amountOut field");
+        }
+        require(found == 1, "exactly one SetwiseSwapExecuted");
     }
 
     function testAttachedNativeValueReverts() external {
