@@ -89,6 +89,10 @@ export {
   createSetwiseFirmAdapters,
 } from "./setwise-firm-adapter.js";
 export {
+  DEFAULT_WALLET_SUBMISSION_BUFFER_MS,
+  runSetwiseFirmSelection,
+} from "./setwise-firm-selection.js";
+export {
   MockSetwiseRfqClient,
   SetwiseRfqClient,
 } from "./setwise-rfq-client.js";
