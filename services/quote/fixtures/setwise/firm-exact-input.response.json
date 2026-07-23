@@ -1,0 +1,31 @@
+{
+  "poolId": "bstock-ai",
+  "chainId": 8453,
+  "mode": "exact-input",
+  "status": "available",
+  "amounts": {
+    "input": "1000000",
+    "output": "2515000"
+  },
+  "gas": {
+    "estimatedUnits": "170000",
+    "estimatedCost": "22500000000000"
+  },
+  "fees": [],
+  "approvalTarget": "0x0000000000000000000000000000000000000033",
+  "expiresAt": "2026-07-22T20:01:00.000Z",
+  "inventory": {
+    "observedAt": "2026-07-22T20:00:00.000Z",
+    "blockNumber": "123457",
+    "balances": {
+      "0x4200000000000000000000000000000000000006": "5000000000000000000",
+      "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913": "25000000000"
+    }
+  },
+  "transaction": {
+    "chainId": 8453,
+    "to": "0x0000000000000000000000000000000000000033",
+    "calldata": "0x1234",
+    "value": "0"
+  }
+}
