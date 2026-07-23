@@ -29,6 +29,7 @@ export const KNOWN_CAPABILITIES = Object.freeze([
   "nameNft",
   "zammLiquidity",
   "ownership",
+  "setwiseComposition",
 ]);
 
 /**
@@ -37,7 +38,7 @@ export const KNOWN_CAPABILITIES = Object.freeze([
  * @typedef {Object} CapabilityDefinition
  * @property {string} title            Human-readable label.
  * @property {"swap-support"|"extension"} scope  ABI scope bucket from the baseline.
- * @property {"ethereum-only"|"out-of-swap-scope"|"retain"} decision  Shipping decision.
+ * @property {"ethereum-only"|"out-of-swap-scope"|"retain"|"disabled"} decision  Shipping decision.
  * @property {boolean} ethereumOnly    Deployment requirement: only chain id 1.
  * @property {readonly string[]} requiresVenues  Venues that must be enabled to deploy it.
  * @property {readonly string[]} functions  Router/quoter ABI functions this gates.
@@ -91,6 +92,16 @@ export const CAPABILITY_DEFINITIONS = Object.freeze({
     functions: Object.freeze(["transferOwnership"]),
     rationale:
       "Required for trust/ensureAllowance administration; retained on every chain and governed separately (issue #37).",
+  }),
+  setwiseComposition: Object.freeze({
+    title: "Set composite routes",
+    scope: "extension",
+    decision: "disabled",
+    ethereumOnly: false,
+    requiresVenues: Object.freeze(["setwise"]),
+    functions: Object.freeze(["multicall"]),
+    rationale:
+      "Mixed Set composite routes (a Set leg consuming transient credit staged by another venue) stay disabled until the composition audit lands; transaction-scoped credit accounting itself ships with issue #17 and only same-venue Set legs may produce it.",
   }),
 });
 
