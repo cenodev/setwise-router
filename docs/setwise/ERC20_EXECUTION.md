@@ -5,7 +5,8 @@ the router. It executes a signed, fixed-amount ERC-20 → ERC-20 swap against a
 registered Set pool. User-facing surfaces describe the venue as a **Set**;
 contract, service, and API identifiers retain `pool` / `poolId` terminology.
 
-Native input/output settlement is issue #13, router transient credit and
+Native → ERC-20 and ERC-20 → native settlement is issue #13 (see
+[`NATIVE_EXECUTION.md`](./NATIVE_EXECUTION.md)), router transient credit and
 composition are issue #17, and allowance/residual hardening across every Set
 path is issue #14. This path already leaves zero balance delta and zero
 allowance after a direct execution.
@@ -20,9 +21,12 @@ order. Every check precedes any approval, token pull, or pool interaction, so
 a failure never leaves partial state:
 
 1. `onlyConfiguredChain` — the deployment is bound to one `block.chainid`.
-2. `nativeFrame(true)` — ERC-20-only entry; attached native value reverts on a
-   standalone call (`UnexpectedNativeValue`) while `multicall` sub-calls still
-   share the caller's native frame.
+2. `nativeFrame(!swap.nativeIn)` — opens the call-scoped native frame. For this
+   ERC-20 → ERC-20 mode `swap.nativeIn` is false, so attached native value
+   reverts on a standalone call (`UnexpectedNativeValue`) while `multicall`
+   sub-calls still share the caller's native frame. (Native-input mode flips
+   this so the input settles from the attached value; see
+   [`NATIVE_EXECUTION.md`](./NATIVE_EXECUTION.md).)
 3. `onlyEnabledSetwisePool` — the governed
    [pool registry](./POOL_REGISTRY.md) must list `swap.pool` as enabled
    (`requireEnabledPool`) and [router control](./GOVERNANCE.md) must not have
@@ -36,8 +40,9 @@ a failure never leaves partial state:
 
 The body then:
 
-1. Requires the `ERC20_TO_ERC20` settlement mode, consistent asset
-   normalization, a nonzero recipient, and nonzero fixed amounts.
+1. Resolves the settlement mode from the native flags (this mode is
+   `ERC20_TO_ERC20`), requires consistent asset normalization, a nonzero
+   recipient, and nonzero fixed amounts.
 2. Pulls exactly the authorized input from the funding wallet.
 3. Grants the registered pool the **exact per-swap allowance**
    (`approve(amountIn)`), calls `swapExactAssetForAsset` with the signed pool
@@ -90,7 +95,7 @@ behind ERC-1967 proxies) and a pool mock that faithfully verifies the EIP-712
 `SwapQuote`, enforces the deadline, and consumes quote IDs. It covers exact
 input consumption, signed-recipient delivery, quote replay, caller
 substitution, zero router balance/allowance, revert atomicity, registry and
-kill-switch guard ordering, native-mode rejection, output-delta mismatch,
-router receipt, multicall framing, expiry, modified calldata, wrong chain,
-token transfer/approval failures, complete event metadata, and constructor
-validation.
+kill-switch guard ordering, native-mode settlement (see
+[`NATIVE_EXECUTION.md`](./NATIVE_EXECUTION.md)), output-delta mismatch, router
+receipt, multicall framing, expiry, modified calldata, wrong chain, token
+transfer/approval failures, complete event metadata, and constructor validation.
