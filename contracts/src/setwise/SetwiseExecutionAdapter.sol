@@ -11,8 +11,8 @@ import {SetwiseAssetMode, SetwiseSwap, SetwiseSwapLib} from "./SetwiseSwap.sol";
 /// @title SetwiseExecutionAdapter
 /// @notice The direct Set (Setwise) execution path for fixed-amount, signed
 ///         swaps. Issue #15 added the ERC-20 → ERC-20 mode; issue #13 adds the
-///         native → ERC-20 and ERC-20 → native modes. Transient-credit
-///         composition is issue #17.
+///         native → ERC-20 and ERC-20 → native modes; issue #17 adds
+///         transaction-scoped transient credit and composition.
 /// @dev Security model, in call order. Every check precedes any approval,
 ///      token pull, native forwarding, or pool interaction, so a failure never
 ///      leaves partial state:
@@ -30,27 +30,33 @@ import {SetwiseAssetMode, SetwiseSwap, SetwiseSwapLib} from "./SetwiseSwap.sol";
 ///         flags, amounts, quote ID, and deadline against the pool's current
 ///         `QUOTE_SIGNER`.
 ///      The body resolves the settlement mode from the native flags, then:
-///      - ERC-20 → ERC-20: pulls the authorized input from the funding wallet,
-///        verifies the exact call-scoped balance increase, grants the pool an
-///        exact per-swap allowance (zero-first when required), calls
-///        `swapExactAssetForAsset`, and clears the allowance.
+///      - ERC-20 → ERC-20: pulls the authorized input from the funding wallet —
+///        or, when the router itself is the signed funder, consumes the exact
+///        amount from the frame's transient token credit — verifies the exact
+///        call-scoped balance change, grants the pool an exact per-swap
+///        allowance (zero-first when required), calls `swapExactAssetForAsset`,
+///        and clears the allowance.
 ///      - native → ERC-20: spends exactly `amountIn` of the frame's native bound
 ///        and forwards it as `msg.value` to `swapExactNativeForAsset`, which the
 ///        pool wraps internally. The native input can never be subsidized by a
 ///        pre-existing router balance because the spend is bound to this call's
 ///        `msg.value` plus transient credit, not `address(this).balance`.
-///      - ERC-20 → native: pulls the authorized input, grants and clears the
-///        exact allowance, and calls `swapExactAssetForNative`, which unwraps
-///        and sends native currency to the recipient.
+///      - ERC-20 → native: pulls the authorized input (or consumes transient
+///        token credit), grants and clears the exact allowance, and calls
+///        `swapExactAssetForNative`, which unwraps and sends native currency to
+///        the recipient.
 ///      In every mode the fixed output is enforced by balance-delta measurement
 ///      (the recipient's ERC-20 balance, or native balance for a native output).
-///      ERC-20 input paths also require the router balance to return to its
-///      pre-call snapshot, rejecting taxed assets and pools that under-consume.
-///      A per-execution lock rejects token and pool reentrancy.
-///      A successful pool call consumes the shared `quoteId`, so replay reverts
-///      at the pool. The recipient may be the router itself, staging output for
-///      future composition (issue #17); a direct execution leaves the router
-///      with zero balance delta and zero allowance.
+///      When the router is the signed recipient, that measured delta is staged
+///      as transient credit (ERC-20 output via `_creditToken`, native output via
+///      `_creditNative`) for a later leg in the same transaction; credit can
+///      never cross transactions or users, and any unconsumed credit reverts
+///      the frame at settlement. ERC-20 input paths also require the router
+///      balance to return to its funding-adjusted snapshot, rejecting taxed
+///      assets and pools that under-consume. A per-execution lock rejects token
+///      and pool reentrancy. A successful pool call consumes the shared
+///      `quoteId`, so replay reverts at the pool. A direct execution leaves the
+///      router with zero balance delta and zero allowance.
 contract SetwiseExecutionAdapter is NativeAccounting, SetwiseRouterAuthorization {
     /// @notice Router-control source ID for Set liquidity.
     bytes32 public constant SETWISE_SOURCE_ID = keccak256("setwise");
@@ -144,10 +150,14 @@ contract SetwiseExecutionAdapter is NativeAccounting, SetwiseRouterAuthorization
     /// @param swap The fixed swap payload. Every security-sensitive field is
     ///        bound by both the router authorization and the pool quote. For a
     ///        native leg, `assetIn`/`assetOut` carry the wrapped-native token
-    ///        exactly as it appears in the signed quote.
+    ///        exactly as it appears in the signed quote. When the router is the
+    ///        signed recipient, the measured output delta is staged as
+    ///        transaction-scoped transient credit instead of being paid out.
     /// @param funder The authorized funding wallet the ERC-20 input is pulled
-    ///        from. Must equal `msg.sender`; router transient credit arrives
-    ///        with issue #17.
+    ///        from. Must equal `msg.sender`, or `address(this)` to fund the leg
+    ///        from transient credit staged earlier in the same transaction; a
+    ///        credit-funded leg must be triggered by the frame payer and never
+    ///        pulls from an external wallet.
     /// @param authorizationSignature The RFQ signer's EIP-712
     ///        `SetwiseAuthorization` over this exact call context.
     /// @return amountOut The measured output delivered to `swap.recipient`,
@@ -182,14 +192,30 @@ contract SetwiseExecutionAdapter is NativeAccounting, SetwiseRouterAuthorization
         );
     }
 
-    /// @dev ERC-20 → ERC-20: pull the authorized input, grant the pool an exact
-    ///      per-swap allowance, execute the signed quote, clear the allowance,
-    ///      and enforce the fixed output by the recipient's ERC-20 balance delta.
+    /// @dev Caller binding for the router authorization. An externally funded leg
+    ///      keeps the default `msg.sender == funder` binding. A credit-funded leg
+    ///      (`funder == address(this)`) is bound to the frame payer — the caller
+    ///      that opened this transaction's frame — so staged credit can never be
+    ///      consumed by a different user.
+    function _requireSetwiseAuthorizedCaller(address funder) internal view override {
+        if (funder == address(this)) {
+            address payer = _framePayer();
+            if (msg.sender != payer) revert SetwiseAuthorizationWrongCaller(msg.sender, payer);
+            return;
+        }
+        if (msg.sender != funder) revert SetwiseAuthorizationWrongCaller(msg.sender, funder);
+    }
+
+    /// @dev ERC-20 → ERC-20: fund the exact input (external pull or transient
+    ///      credit), grant the pool an exact per-swap allowance, execute the
+    ///      signed quote, clear the allowance, and enforce the fixed output by
+    ///      the recipient's ERC-20 balance delta. A router recipient stages the
+    ///      measured delta as transient token credit.
     function _executeErc20ToErc20(SetwiseSwap calldata swap, address funder, ISetwisePool pool)
         internal
         returns (uint256 amountOut)
     {
-        uint256 inputBalanceBefore = _pullExactInput(swap.assetIn, funder, swap.amountIn);
+        uint256 inputSettleBalance = _fundExactInput(swap.assetIn, funder, swap.amountIn);
 
         uint256 recipientBefore = _balanceOf(swap.assetOut, swap.recipient);
         _forceApprove(swap.assetIn, address(pool), swap.amountIn);
@@ -205,17 +231,19 @@ contract SetwiseExecutionAdapter is NativeAccounting, SetwiseRouterAuthorization
             swap.auxiliaryData
         );
         _safeApprove(swap.assetIn, address(pool), 0);
-        _requireInputBalance(swap.assetIn, inputBalanceBefore);
+        _requireInputBalance(swap.assetIn, inputSettleBalance);
         amountOut = _balanceOf(swap.assetOut, swap.recipient) - recipientBefore;
 
         if (amountOut != swap.amountOut) revert SetwiseOutputMismatch(swap.amountOut, amountOut);
+        if (swap.recipient == address(this)) _creditToken(swap.assetOut, amountOut);
     }
 
     /// @dev Native → ERC-20: spend exactly `amountIn` of the frame's native
     ///      bound (this call's `msg.value` plus transient credit, never a
     ///      pre-existing router balance) and forward it to the pool's native
     ///      entry point, which wraps it internally. Enforce the fixed output by
-    ///      the recipient's ERC-20 balance delta. Surplus attached value is
+    ///      the recipient's ERC-20 balance delta. A router recipient stages the
+    ///      measured delta as transient token credit. Surplus attached value is
     ///      refunded by the frame as a per-call delta.
     function _executeNativeToErc20(SetwiseSwap calldata swap, ISetwisePool pool) internal returns (uint256 amountOut) {
         _spendNative(swap.amountIn);
@@ -234,20 +262,22 @@ contract SetwiseExecutionAdapter is NativeAccounting, SetwiseRouterAuthorization
         amountOut = _balanceOf(swap.assetOut, swap.recipient) - recipientBefore;
 
         if (amountOut != swap.amountOut) revert SetwiseOutputMismatch(swap.amountOut, amountOut);
+        if (swap.recipient == address(this)) _creditToken(swap.assetOut, amountOut);
     }
 
-    /// @dev ERC-20 → native: pull the authorized input, grant the pool an exact
-    ///      per-swap allowance, and call the pool's native-output entry point,
-    ///      which unwraps and sends native currency to the recipient. Clear the
-    ///      allowance and enforce the fixed output by the recipient's native
-    ///      balance delta. A recipient that rejects native currency reverts the
-    ///      pool call; such recipients settle via a wrapped-native (ERC-20)
-    ///      route instead.
+    /// @dev ERC-20 → native: fund the exact input (external pull or transient
+    ///      credit), grant the pool an exact per-swap allowance, and call the
+    ///      pool's native-output entry point, which unwraps and sends native
+    ///      currency to the recipient. Clear the allowance and enforce the fixed
+    ///      output by the recipient's native balance delta. A router recipient
+    ///      stages the measured delta as transient native credit. A recipient
+    ///      that rejects native currency reverts the pool call; such recipients
+    ///      settle via a wrapped-native (ERC-20) route instead.
     function _executeErc20ToNative(SetwiseSwap calldata swap, address funder, ISetwisePool pool)
         internal
         returns (uint256 amountOut)
     {
-        uint256 inputBalanceBefore = _pullExactInput(swap.assetIn, funder, swap.amountIn);
+        uint256 inputSettleBalance = _fundExactInput(swap.assetIn, funder, swap.amountIn);
 
         uint256 recipientBefore = swap.recipient.balance;
         _forceApprove(swap.assetIn, address(pool), swap.amountIn);
@@ -262,10 +292,28 @@ contract SetwiseExecutionAdapter is NativeAccounting, SetwiseRouterAuthorization
             swap.auxiliaryData
         );
         _safeApprove(swap.assetIn, address(pool), 0);
-        _requireInputBalance(swap.assetIn, inputBalanceBefore);
+        _requireInputBalance(swap.assetIn, inputSettleBalance);
         amountOut = swap.recipient.balance - recipientBefore;
 
         if (amountOut != swap.amountOut) revert SetwiseOutputMismatch(swap.amountOut, amountOut);
+        if (swap.recipient == address(this)) _creditNative(amountOut);
+    }
+
+    /// @dev Fund the swap's exact ERC-20 input and return the router balance the
+    ///      pool call must settle back to. An external funder is pulled the exact
+    ///      signed amount (settle balance = pre-pull snapshot). A router funder
+    ///      consumes the exact signed amount from the frame's transient token
+    ///      credit (settle balance = current balance minus the consumed amount),
+    ///      so a leg can never spend credit it was not given and a pool can never
+    ///      under- or over-consume the staged input.
+    function _fundExactInput(address token, address funder, uint256 amount) internal returns (uint256 settleBalance) {
+        if (funder == address(this)) {
+            _spendTokenCredit(token, amount);
+            uint256 staged = _balanceOf(token, address(this));
+            if (staged < amount) revert SetwiseInputBalanceMismatch(token, amount, staged);
+            return staged - amount;
+        }
+        return _pullExactInput(token, funder, amount);
     }
 
     function _pullExactInput(address token, address funder, uint256 amount) internal returns (uint256 balanceBefore) {

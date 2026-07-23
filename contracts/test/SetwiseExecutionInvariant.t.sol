@@ -108,6 +108,43 @@ contract SetwiseExecutionInvariantHandler {
         });
     }
 
+    /// @dev Issue #17: fuzz create/consume ordering for transient-credit
+    ///      composition. Mode 0 stages ERC-20 credit (tokenIn -> tokenOut to the
+    ///      router) and consumes it (tokenOut -> tokenIn, router funder); mode 1
+    ///      stages native credit (tokenIn -> native to the router) and consumes
+    ///      it (native -> tokenOut, no new msg.value). Only sequences whose
+    ///      every prefix stages at least as much as it consumes and whose totals
+    ///      match exactly can succeed; every other ordering reverts atomically,
+    ///      which the balance/allowance invariants verify after each run.
+    function executeCompositionMulticall(uint8 sequenceSeed, uint8 modeSeed) external {
+        uint256 length = (uint256(sequenceSeed) % 4) + 1;
+        uint256 mode = uint256(modeSeed) % 2;
+
+        bytes[] memory calls = new bytes[](length);
+        for (uint256 i = 0; i < length; ++i) {
+            bool create = ((uint256(sequenceSeed) >> (8 + i)) & 1) == 1;
+            calls[i] = create ? _compositionCreateCall(mode) : _compositionConsumeCall(mode);
+        }
+        try adapter.multicall(calls) returns (bytes[] memory) {} catch {}
+    }
+
+    function _compositionCreateCall(uint256 mode) private returns (bytes memory) {
+        SetwiseSwap memory swap = _swap(mode == 1 ? 2 : 0);
+        swap.recipient = address(adapter);
+        swap.signature = _poolQuote(swap);
+        return abi.encodeCall(adapter.swapSetwise, (swap, address(this), _authorizationFor(swap, address(this))));
+    }
+
+    function _compositionConsumeCall(uint256 mode) private returns (bytes memory) {
+        SetwiseSwap memory swap = _swap(mode == 1 ? 1 : 0);
+        swap.assetIn = mode == 1 ? address(wrappedNative) : address(tokenOut);
+        swap.assetOut = mode == 1 ? address(tokenOut) : address(tokenIn);
+        swap.amountIn = AMOUNT_OUT;
+        swap.amountOut = mode == 1 ? AMOUNT_OUT : AMOUNT_IN;
+        swap.signature = _poolQuote(swap);
+        return abi.encodeCall(adapter.swapSetwise, (swap, address(adapter), _authorizationFor(swap, address(adapter))));
+    }
+
     function _poolQuote(SetwiseSwap memory swap) private returns (bytes memory) {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
             SIGNER_KEY,
@@ -126,7 +163,11 @@ contract SetwiseExecutionInvariantHandler {
     }
 
     function _authorization(SetwiseSwap memory swap) private returns (bytes memory) {
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(SIGNER_KEY, adapter.setwiseAuthorizationDigest(swap, address(this)));
+        return _authorizationFor(swap, address(this));
+    }
+
+    function _authorizationFor(SetwiseSwap memory swap, address funder) private returns (bytes memory) {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(SIGNER_KEY, adapter.setwiseAuthorizationDigest(swap, funder));
         return abi.encodePacked(r, s, v);
     }
 

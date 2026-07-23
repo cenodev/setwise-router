@@ -171,7 +171,7 @@ abstract contract SetwiseRouterAuthorization {
         address funder,
         bytes calldata authorizationSignature
     ) internal view {
-        if (msg.sender != funder) revert SetwiseAuthorizationWrongCaller(msg.sender, funder);
+        _requireSetwiseAuthorizedCaller(funder);
         if (block.timestamp > swap.deadline) revert SetwiseAuthorizationExpired(swap.deadline);
 
         address signer = ISetwisePool(swap.pool).QUOTE_SIGNER();
@@ -179,5 +179,14 @@ abstract contract SetwiseRouterAuthorization {
         if (!SetwiseSignatureChecker.isValidSignatureNow(
                 signer, setwiseAuthorizationDigest(swap, funder), authorizationSignature
             )) revert InvalidSetwiseAuthorization();
+    }
+
+    /// @notice Bind the caller to the signed funding wallet. The default binding
+    ///         requires `msg.sender == funder`; execution adapters that also fund
+    ///         legs from router transient credit (issue #17) override this hook to
+    ///         bind a credit-funded leg (`funder == address(this)`) to the
+    ///         transaction's frame payer instead.
+    function _requireSetwiseAuthorizedCaller(address funder) internal view virtual {
+        if (msg.sender != funder) revert SetwiseAuthorizationWrongCaller(msg.sender, funder);
     }
 }

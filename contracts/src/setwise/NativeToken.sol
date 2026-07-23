@@ -51,17 +51,21 @@ library NativeTokenLib {
 }
 
 /// @title NativeAccounting
-/// @notice Call-scoped native value accounting for the Setwise Router. Native
+/// @notice Transaction-scoped value accounting for the Setwise Router. Native
 ///         spending is bound to the native value attached to the current top-level
 ///         call (`msg.value`) plus any transient credit earned earlier in the same
-///         transaction; a spend that exceeds that bound always reverts. Refunds are
-///         computed as a per-call delta (the unspent portion of the caller's
-///         `msg.value`), never from `address(this).balance`, so a pre-existing router
-///         balance is never swept out to a caller.
+///         transaction; a spend that exceeds that bound always reverts. ERC-20 legs
+///         stage and consume transient token credit the same way (issue #17).
+///         Refunds are computed as a per-call delta (the unspent portion of the
+///         caller's `msg.value`), never from `address(this).balance`, so a
+///         pre-existing router balance is never swept out to a caller.
 /// @dev Accounting state lives in transient storage (Cancun), so it is scoped to a
-///      single transaction and is discarded on revert. This is the native-value layer
-///      only; the general transient-credit composition system is tracked separately
-///      (issue #17) and production governance (issue #37) owns the `governance` role.
+///      single transaction and is discarded on revert. Credits therefore cannot
+///      cross transactions, and every credit spend is bound to the frame payer (the
+///      caller that opened the frame), so credits cannot cross users either.
+///      Settlement reverts on any unconsumed credit, so a staged balance can never
+///      persist past the transaction that created it. Production governance
+///      (issue #37) owns the `governance` role.
 abstract contract NativeAccounting {
     /// @notice The chain's wrapped-native token, selected from verified chain
     ///         configuration at deploy time (never a hardcoded constant).
@@ -75,6 +79,12 @@ abstract contract NativeAccounting {
     bytes32 private constant _FRAME_MSG_VALUE_SLOT = keccak256("setwise.router.NativeAccounting.frameMsgValue");
     bytes32 private constant _FRAME_SPENT_SLOT = keccak256("setwise.router.NativeAccounting.frameSpent");
     bytes32 private constant _FRAME_CREDIT_SLOT = keccak256("setwise.router.NativeAccounting.frameCredit");
+    bytes32 private constant _FRAME_PAYER_SLOT = keccak256("setwise.router.NativeAccounting.framePayer");
+    bytes32 private constant _TOKEN_CREDIT_COUNT_SLOT = keccak256("setwise.router.NativeAccounting.tokenCreditCount");
+    // Per-token credit slots are keccak256(_TOKEN_CREDIT_NAMESPACE, token); the
+    // touched-token list uses keccak256(_TOKEN_CREDIT_LIST_NAMESPACE, index).
+    bytes32 private constant _TOKEN_CREDIT_NAMESPACE = keccak256("setwise.router.NativeAccounting.tokenCredit");
+    bytes32 private constant _TOKEN_CREDIT_LIST_NAMESPACE = keccak256("setwise.router.NativeAccounting.tokenCreditList");
 
     /// @notice A native frame is already active (nested top-level call or multicall).
     error NativeFrameActive();
@@ -89,6 +99,14 @@ abstract contract NativeAccounting {
     /// @notice Credited native currency was not fully consumed by the end of the call,
     ///         which would leave a residual router balance.
     error ResidualNativeCredit(uint256 amount);
+    /// @notice A token-credit spend exceeds the credit staged earlier in the frame.
+    error InsufficientTokenCredit(address token, uint256 required, uint256 available);
+    /// @notice Credited tokens were not fully consumed by the end of the call, which
+    ///         would leave a residual router balance.
+    error ResidualTokenCredit(address token, uint256 amount);
+    /// @notice A credit spend was attempted by a caller other than the frame payer,
+    ///         so credit can never cross users within a transaction.
+    error CreditUserMismatch(address caller, address payer);
     /// @notice The caller is not the `governance` role.
     error Unauthorized();
     /// @notice A zero recipient was supplied.
@@ -169,6 +187,10 @@ abstract contract NativeAccounting {
     ///         exceed the bound. The native tokens themselves are already held by the
     ///         contract (from `msg.value` or a prior credit); this only enforces the
     ///         bound so a call can never spend native it was not given.
+    /// @dev Callers that reach this from an externally triggerable callback (e.g.
+    ///      AMM pool swap callbacks) authenticate the callback caller themselves;
+    ///      the ERC-20 credit path additionally binds every spend to the frame
+    ///      payer (issue #17).
     function _spendNative(uint256 amount) internal {
         if (amount == 0) return;
         if (!_frameActive()) revert NativeFrameInactive();
@@ -184,6 +206,58 @@ abstract contract NativeAccounting {
         if (amount == 0) return;
         if (!_frameActive()) revert NativeFrameInactive();
         _tstore(_FRAME_CREDIT_SLOT, _frameCredit() + amount);
+    }
+
+    // --- ERC-20 transient credit (issue #17) ---------------------------------
+
+    /// @notice Credit `amount` of `token` received mid-transaction (a verified
+    ///         balance delta measured by the caller) so a later leg in the same
+    ///         frame can consume it. The credit is transaction-scoped and must be
+    ///         fully consumed before the frame settles.
+    function _creditToken(address token, uint256 amount) internal {
+        if (amount == 0) return;
+        if (!_frameActive()) revert NativeFrameInactive();
+        uint256 credit = _tokenCredit(token);
+        if (credit == 0) _pushCreditedToken(token);
+        _tstore(_tokenCreditSlot(token), credit + amount);
+    }
+
+    /// @notice Consume `amount` of `token` from the current frame's staged credit.
+    ///         Only the frame payer may consume credit, so staged value can never
+    ///         cross users; the spend reverts when it exceeds the staged credit.
+    ///         The tokens themselves are already held by the router (they were
+    ///         credited only after a measured balance delta); this enforces the
+    ///         bound so a leg can never consume credit it was not given.
+    function _spendTokenCredit(address token, uint256 amount) internal {
+        if (amount == 0) return;
+        if (!_frameActive()) revert NativeFrameInactive();
+        _requireFramePayer();
+        uint256 credit = _tokenCredit(token);
+        if (amount > credit) revert InsufficientTokenCredit(token, amount, credit);
+        _tstore(_tokenCreditSlot(token), credit - amount);
+    }
+
+    /// @notice The outstanding `token` credit staged in the current frame.
+    function _tokenCredit(address token) internal view returns (uint256 credit) {
+        bytes32 slot = _tokenCreditSlot(token);
+        assembly {
+            credit := tload(slot)
+        }
+    }
+
+    /// @notice The caller that opened the current frame. Every credit spend is
+    ///         bound to this caller, so credit cannot cross users.
+    function _framePayer() internal view returns (address payer) {
+        bytes32 slot = _FRAME_PAYER_SLOT;
+        assembly {
+            payer := tload(slot)
+        }
+    }
+
+    /// @dev Revert unless `msg.sender` is the frame payer.
+    function _requireFramePayer() private view {
+        address payer = _framePayer();
+        if (msg.sender != payer) revert CreditUserMismatch(msg.sender, payer);
     }
 
     /// @notice Revert unless the attached `msg.value` is exactly `expected`. Used by
@@ -212,11 +286,14 @@ abstract contract NativeAccounting {
         _tstore(_FRAME_MSG_VALUE_SLOT, msg.value);
         _tstore(_FRAME_SPENT_SLOT, 0);
         _tstore(_FRAME_CREDIT_SLOT, 0);
+        _tstore(_FRAME_PAYER_SLOT, uint256(uint160(msg.sender)));
+        _tstore(_TOKEN_CREDIT_COUNT_SLOT, 0);
     }
 
-    /// @dev Settle the frame: refund the unspent portion of the caller's `msg.value`
-    ///      (a per-call delta, never `address(this).balance`) and require that all
-    ///      transient credit was consumed so no residual native balance is left.
+    /// @dev Settle the frame: require that every staged credit (native and ERC-20)
+    ///      was fully consumed so no residual router balance is left, then refund
+    ///      the unspent portion of the caller's `msg.value` (a per-call delta,
+    ///      never `address(this).balance`).
     function _settleNativeFrame(address payable payer) private {
         uint256 msgValue = _frameMsgValue();
         uint256 spent = _frameSpent();
@@ -228,10 +305,23 @@ abstract contract NativeAccounting {
 
         uint256 refund = msgValue - spentFromMsgValue;
 
+        uint256 tokenCount = _tokenCreditCount();
+        for (uint256 i = 0; i < tokenCount; ++i) {
+            address token = _creditedTokenAt(i);
+            uint256 outstanding = _tokenCredit(token);
+            if (outstanding != 0) revert ResidualTokenCredit(token, outstanding);
+        }
+
         _tstore(_FRAME_ACTIVE_SLOT, 0);
         _tstore(_FRAME_MSG_VALUE_SLOT, 0);
         _tstore(_FRAME_SPENT_SLOT, 0);
         _tstore(_FRAME_CREDIT_SLOT, 0);
+        _tstore(_FRAME_PAYER_SLOT, 0);
+        for (uint256 i = 0; i < tokenCount; ++i) {
+            _tstore(_tokenCreditSlot(_creditedTokenAt(i)), 0);
+            _tstore(_tokenCreditListSlot(i), 0);
+        }
+        _tstore(_TOKEN_CREDIT_COUNT_SLOT, 0);
 
         if (refund != 0) {
             NativeTokenLib.transferNative(payer, refund);
@@ -265,6 +355,37 @@ abstract contract NativeAccounting {
         assembly {
             value := tload(slot)
         }
+    }
+
+    /// @dev Record `token` in the frame's credited-token list (called on the first
+    ///      credit for that token in the frame) so settlement can require every
+    ///      staged credit to be consumed.
+    function _pushCreditedToken(address token) private {
+        uint256 count = _tokenCreditCount();
+        _tstore(_tokenCreditListSlot(count), uint256(uint160(token)));
+        _tstore(_TOKEN_CREDIT_COUNT_SLOT, count + 1);
+    }
+
+    function _tokenCreditCount() private view returns (uint256 count) {
+        bytes32 slot = _TOKEN_CREDIT_COUNT_SLOT;
+        assembly {
+            count := tload(slot)
+        }
+    }
+
+    function _creditedTokenAt(uint256 index) private view returns (address token) {
+        bytes32 slot = _tokenCreditListSlot(index);
+        assembly {
+            token := tload(slot)
+        }
+    }
+
+    function _tokenCreditSlot(address token) private pure returns (bytes32) {
+        return keccak256(abi.encode(_TOKEN_CREDIT_NAMESPACE, token));
+    }
+
+    function _tokenCreditListSlot(uint256 index) private pure returns (bytes32) {
+        return keccak256(abi.encode(_TOKEN_CREDIT_LIST_NAMESPACE, index));
     }
 
     function _tstore(bytes32 slot, uint256 value) private {
