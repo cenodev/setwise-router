@@ -63,6 +63,26 @@ export {
 export { describeNetworkState } from "./network.js";
 
 export {
+  APPROVAL_FLOWS,
+  PREFLIGHT_CHECKS,
+  TX_EVENTS,
+  TX_STATES,
+  approvalMatchesRoute,
+  buildExecutableRoute,
+  canResubmit,
+  canSubmitExecution,
+  createTxLifecycle,
+  describeApprovalRequest,
+  describePreflightResult,
+  describeTxState,
+  invalidateTx,
+  resolveApprovalFlow,
+  runPreflightChecks,
+  submitExecution,
+  transitionTx,
+} from "./execution.js";
+
+export {
   CONTROL_LEVELS,
   GOVERNANCE_ROLES,
   TIMELOCK_BOUNDS,
