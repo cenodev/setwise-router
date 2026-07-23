@@ -176,7 +176,7 @@ function mapFees(body, request) {
   }
   if (feesObj.integratorFee && feesObj.integratorFee.amount) {
     fees.push({
-      type: "source",
+      type: "integrator",
       amount: String(feesObj.integratorFee.amount),
       token: feesObj.integratorFee.token
         ? { chainId, address: feesObj.integratorFee.token }

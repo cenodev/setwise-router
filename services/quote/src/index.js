@@ -37,6 +37,13 @@ export {
   runQuote,
   selectBestSource,
 } from "./response.js";
+export {
+  buildRouteRanking,
+  DEFAULT_APPROVAL_GAS_UNITS,
+  DEFAULT_MINIMUM_IMPROVEMENT_AMOUNT,
+  DEFAULT_MINIMUM_IMPROVEMENT_BPS,
+  rankQuoteSources,
+} from "./ranking.js";
 export { mulDivCeil, mulDivFloor, slippageLimit } from "./rounding.js";
 
 export { buildCacheKey, classifyRecipient, QuoteCache } from "./cache.js";

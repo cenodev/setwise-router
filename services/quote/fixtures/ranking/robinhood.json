@@ -1,0 +1,34 @@
+{
+  "chainId": 4663,
+  "nativeSymbol": "ETH",
+  "mode": "exact-input",
+  "inputDecimals": 6,
+  "outputDecimals": 8,
+  "tokenIn": "0x0000000000000000000000000000000000000011",
+  "tokenOut": "0x0000000000000000000000000000000000000022",
+  "conversion": {
+    "fromToken": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+    "toToken": "0x0000000000000000000000000000000000000022",
+    "fromAmount": "1000000000000000000",
+    "toAmount": "100000000000"
+  },
+  "routes": [
+    {
+      "id": "raw-best",
+      "input": "1000000",
+      "output": "50000000000",
+      "gasUnits": "100000",
+      "gasCost": "10000000000000000",
+      "fees": []
+    },
+    {
+      "id": "net-best",
+      "input": "1000000",
+      "output": "49950000000",
+      "gasUnits": "100000",
+      "gasCost": "1000000000000000",
+      "fees": []
+    }
+  ],
+  "expectedSourceId": "net-best"
+}

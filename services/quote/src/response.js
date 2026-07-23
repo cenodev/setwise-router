@@ -4,9 +4,8 @@
  * Turns the isolated per-source outcomes produced by the runner into a single
  * schema-valid v1 quote response:
  *
- *   - selects the best available route for the request's exact-mode (highest
- *     output for exact-input, lowest input for exact-output, with a
- *     deterministic source-id tie-break);
+ *   - selects the best available route by gas- and fee-adjusted executable
+ *     outcome, with explicit pricing fallbacks and deterministic thresholds;
  *   - preserves every source outcome — selected and rejected — each with its
  *     own evidence, so the decision is auditable;
  *   - lifts the selected source's executable transaction to the top level for
@@ -23,6 +22,7 @@
  */
 
 import { generateCorrelationId } from "./correlation.js";
+import { rankQuoteSources } from "./ranking.js";
 import { runQuoteSources } from "./runner.js";
 import {
   QUOTE_API_VERSION,
@@ -78,6 +78,8 @@ export function selectBestSource(sources, mode) {
  * @param {string} [params.requestId]  Stable request id (generated if omitted).
  * @param {Record<string, object>} [params.transactions]  Per-source executable
  *   transactions keyed by source id (firm quotes only).
+ * @param {object} [params.ranking] Explicit gas, conversion, approval, and
+ *   minimum-improvement policy consumed by `rankQuoteSources`.
  * @returns {object} a validated `QuoteResponse`.
  */
 export function assembleQuoteResponse({
@@ -86,6 +88,7 @@ export function assembleQuoteResponse({
   kind,
   requestId,
   transactions = {},
+  ranking = {},
 }) {
   const validatedRequest = validateQuoteRequest(request);
   if (!KIND_SET.has(kind)) {
@@ -95,7 +98,8 @@ export function assembleQuoteResponse({
     throw new Error("sources must contain at least one source outcome");
   }
 
-  const selectedSourceId = selectBestSource(sources, validatedRequest.mode);
+  const ranked = rankQuoteSources(sources, validatedRequest, ranking);
+  const selectedSourceId = ranked.selectedSourceId;
   const transaction =
     kind === "firm" && selectedSourceId !== null
       ? transactions[selectedSourceId] ?? null
@@ -108,7 +112,7 @@ export function assembleQuoteResponse({
     mode: validatedRequest.mode,
     kind,
     selectedSourceId,
-    sources,
+    sources: ranked.sources,
     transaction,
   };
   return validateQuoteResponse(response, validatedRequest);
@@ -125,6 +129,8 @@ export function assembleQuoteResponse({
  * @param {string} [options.requestId]  Stable request id (generated if omitted).
  * @param {AbortSignal} [options.signal]  Caller cancellation signal.
  * @param {() => string} [options.now]  Clock override for deterministic tests.
+ * @param {object} [options.ranking] Explicit gas, conversion, approval, and
+ *   minimum-improvement policy.
  * @returns {Promise<{response: object, sources: Array<object>, timings: Array<object>}>}
  */
 export async function runQuote(adapters, request, options = {}) {
@@ -140,6 +146,7 @@ export async function runQuote(adapters, request, options = {}) {
     kind,
     requestId: options.requestId,
     transactions,
+    ranking: options.ranking,
   });
   return { response, sources, timings };
 }
