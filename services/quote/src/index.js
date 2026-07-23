@@ -32,6 +32,12 @@ export {
 export { MockQuoteAdapter } from "./mock-adapter.js";
 export { QuoteSourceRegistry } from "./registry.js";
 export { runQuoteSources } from "./runner.js";
+export {
+  assembleQuoteResponse,
+  runQuote,
+  selectBestSource,
+} from "./response.js";
+export { mulDivCeil, mulDivFloor, slippageLimit } from "./rounding.js";
 
 export { buildCacheKey, classifyRecipient, QuoteCache } from "./cache.js";
 export {

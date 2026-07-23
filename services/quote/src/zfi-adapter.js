@@ -30,6 +30,7 @@ import { getChainConfig } from "../../../config/index.mjs";
 import { runtimeBytecodeHash } from "../../../deployments/bytecode.mjs";
 import { rpcCall } from "../../../deployments/rpc.mjs";
 import { QuoteSourceAdapter } from "./adapter.js";
+import { slippageLimit } from "./rounding.js";
 import {
   decodeAggregate3,
   decodeQuoterResult,
@@ -179,12 +180,45 @@ function enabledBuilders(chainConfig, deployment, mode) {
 }
 
 function routeLimit(mode, route, slippageBps) {
+  // Trust an explicit on-chain amount limit when the builder returns one;
+  // otherwise derive a conservative limit (floor min-output for exact-input,
+  // ceil max-input for exact-output).
   if (route.limit !== undefined && route.limit !== null) return route.limit;
-  const bps = BigInt(slippageBps);
-  if (mode === "exact-input") {
-    return ((BigInt(route.amountOut) * (10000n - bps)) / 10000n).toString();
-  }
-  return ((BigInt(route.amountIn) * (10000n + bps) + 9999n) / 10000n).toString();
+  return mode === "exact-input"
+    ? slippageLimit("exact-input", route.amountOut, slippageBps)
+    : slippageLimit("exact-output", route.amountIn, slippageBps);
+}
+
+/**
+ * Structured description of a selected route's path and split proportions,
+ * encoded as JSON in the route's evidence `message` so the chosen on-chain
+ * route can be reconstructed from response evidence. Each leg reports its swap
+ * venue, fee, amounts, and (for split/hybrid routes) its share of the total
+ * input in basis points.
+ * @param {string} label  Route-builder label (direct, multi-hop, split, ...).
+ * @param {object} route  Decoded route `{ amountIn, amountOut, legs }`.
+ * @param {string} mode   Quote exact-mode.
+ * @returns {string}
+ */
+function routePathMessage(label, route, mode) {
+  const totalIn = BigInt(route.amountIn);
+  const legs = (route.legs ?? []).map((leg) => ({
+    source: leg.source,
+    feeBps: leg.feeBps,
+    amountIn: leg.amountIn,
+    amountOut: leg.amountOut,
+    proportionBps:
+      totalIn > 0n
+        ? Number((BigInt(leg.amountIn) * 10_000n) / totalIn)
+        : 0,
+  }));
+  return JSON.stringify({
+    builder: label,
+    mode,
+    amountIn: route.amountIn,
+    amountOut: route.amountOut,
+    legs,
+  });
 }
 
 function revertDetail(returnData) {
@@ -383,8 +417,9 @@ export class ZfiQuoteAdapter extends QuoteSourceAdapter {
         evidence.push({ ...base, code: ZFI_ERROR_CODES.ROUTE_REVERTED, message: `undecodable route: ${error?.message ?? "decode failed"}` });
         return;
       }
+      const evidenceIndex = evidence.length;
       evidence.push(base);
-      candidates.push({ name, route });
+      candidates.push({ name, builder, route, evidenceIndex });
     });
 
     if (candidates.length === 0) {
@@ -392,6 +427,13 @@ export class ZfiQuoteAdapter extends QuoteSourceAdapter {
     }
 
     const best = this.selectBest(mode, candidates);
+    // Record the selected route's path and split proportions so the chosen
+    // on-chain route is reconstructable from response evidence.
+    evidence[best.evidenceIndex].message = routePathMessage(
+      best.builder.label,
+      best.route,
+      mode,
+    );
     const quote = this.buildQuote(request, context, best.route, slippageBps, observedAt);
     const result = { status: "available", quote, evidence };
     if (context.kind === "firm") {
