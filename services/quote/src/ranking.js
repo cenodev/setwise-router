@@ -309,7 +309,11 @@ function chooseWithinThreshold(candidates, mode, useAdjusted, policy) {
       : amount - bestAmount <= tolerance;
   });
   equivalent.sort((left, right) =>
-    left.source.id.localeCompare(right.source.id),
+    left.source.id < right.source.id
+      ? -1
+      : left.source.id > right.source.id
+        ? 1
+        : 0,
   );
   return equivalent[0].source.id;
 }

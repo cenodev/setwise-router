@@ -378,6 +378,8 @@ function validateRanking(value, quote, request, path) {
       `${path}.adjustments`,
     );
   }
+  const adjustmentTypes = new Set();
+  let hasUnpricedAdjustment = false;
   value.adjustments.forEach((item, index) => {
     const itemPath = `${path}.adjustments[${index}]`;
     object(item, itemPath, QUOTE_ERROR_CODES.INVALID_RESPONSE);
@@ -395,6 +397,7 @@ function validateRanking(value, quote, request, path) {
         `${itemPath}.type`,
       );
     }
+    adjustmentTypes.add(item.type);
     if (item.amount !== null) uint(item.amount, `${itemPath}.amount`);
     chainAddress(item.token, request.chainId, `${itemPath}.token`);
     if (item.comparisonAmount !== null) {
@@ -411,7 +414,34 @@ function validateRanking(value, quote, request, path) {
         `${itemPath}.status`,
       );
     }
+    if (!["applied", "not-required"].includes(item.status)) {
+      hasUnpricedAdjustment = true;
+    }
   });
+  for (const requiredType of [
+    "protocol-fee",
+    "integrator-fee",
+    "gas",
+    "approval",
+  ]) {
+    if (!adjustmentTypes.has(requiredType)) {
+      fail(
+        QUOTE_ERROR_CODES.INVALID_RESPONSE,
+        `${path}.adjustments must include ${requiredType}`,
+        `${path}.adjustments`,
+      );
+    }
+  }
+  if (
+    (value.status === "complete" && hasUnpricedAdjustment) ||
+    (value.status === "unpriced" && !hasUnpricedAdjustment)
+  ) {
+    fail(
+      QUOTE_ERROR_CODES.INVALID_RESPONSE,
+      `${path}.status must reflect its adjustment pricing statuses`,
+      `${path}.status`,
+    );
+  }
   object(value.thresholds, `${path}.thresholds`, QUOTE_ERROR_CODES.INVALID_RESPONSE);
   keys(
     value.thresholds,
@@ -439,6 +469,16 @@ function validateRanking(value, quote, request, path) {
     fail(
       QUOTE_ERROR_CODES.INVALID_RESPONSE,
       `${path}.fallback must be none or raw-amount`,
+      `${path}.fallback`,
+    );
+  }
+  if (
+    (value.status === "complete" && value.fallback !== "none") ||
+    (value.status === "unpriced" && value.fallback !== "raw-amount")
+  ) {
+    fail(
+      QUOTE_ERROR_CODES.INVALID_RESPONSE,
+      `${path}.fallback must match the ranking status`,
       `${path}.fallback`,
     );
   }
