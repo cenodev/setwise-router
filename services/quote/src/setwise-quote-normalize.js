@@ -3,6 +3,7 @@
  */
 
 import { resolveNativeAsset } from "../../../config/native.mjs";
+import { slippageLimit } from "./rounding.js";
 
 /**
  * @typedef {Object} SetwiseRfqIndicativeResponse
@@ -23,15 +24,13 @@ import { resolveNativeAsset } from "../../../config/native.mjs";
  */
 
 function applySlippageLimit(mode, amounts, maxBps) {
-  const input = BigInt(amounts.input);
-  const output = BigInt(amounts.output);
-  const bps = BigInt(maxBps);
-  if (mode === "exact-input") {
-    const limit = (output * (10_000n - bps)) / 10_000n;
-    return { input: amounts.input, output: amounts.output, limit: limit.toString() };
-  }
-  const limit = (input * (10_000n + bps)) / 10_000n;
-  return { input: amounts.input, output: amounts.output, limit: limit.toString() };
+  // exact-input protects the minimum output (floor); exact-output protects the
+  // maximum input (ceil) so the limit never under-cuts the required input.
+  const limit =
+    mode === "exact-input"
+      ? slippageLimit("exact-input", amounts.output, maxBps)
+      : slippageLimit("exact-output", amounts.input, maxBps);
+  return { input: amounts.input, output: amounts.output, limit };
 }
 
 /**

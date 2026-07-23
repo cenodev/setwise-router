@@ -33,6 +33,53 @@ For `exact-input`, `amounts.input` equals the requested amount and `amounts.limi
 is the minimum acceptable output. For `exact-output`, `amounts.output` equals the
 requested amount and `amounts.limit` is the maximum acceptable input.
 
+## Amount semantics by source and route builder
+
+Every source normalizes `amounts.input`, `amounts.output`, and `amounts.limit`
+as canonical unsigned-integer strings in a token's smallest unit, and the exact
+side always equals the request `amount`:
+
+- **ZFi on-chain (`zfi`)** — each route builder maps the request onto a quoter
+  view and reports the decoded amounts. `direct` uses the single best leg;
+  `multi-hop` and `three-hop` report the first leg's input and the last leg's
+  output; `split` and `hybrid` sum their parallel legs. When a builder returns
+  an explicit on-chain amount limit it is used as-is; otherwise the limit is
+  derived from the quoted amount and the slippage tolerance.
+- **External aggregators (`aggregator`)** — the aggregator's returned sell/buy
+  amounts are preserved; the limit is the reported `minBuyAmount` (exact-input)
+  or `maxSellAmount` (exact-output). Fees, gas, and approval metadata pass
+  through unmodified.
+- **Set (`setwise`)** — the RFQ indicative amounts are preserved and the limit
+  is derived from the quoted amount and slippage tolerance. Set sources are
+  indicative-only and never carry an approval target or transaction.
+
+`split` and `hybrid` builders are exact-input only. For an `exact-output`
+request they are not selectable; a source that supports only `exact-input`
+appears with `status: "excluded"` and `UNSUPPORTED_MODE` policy evidence.
+
+## Conservative rounding
+
+Slippage limits are rounded so a limit never over-promises, using BigInt math
+that preserves token-decimal precision:
+
+- `exact-input` → `limit` (minimum output) is rounded **down** (floor).
+- `exact-output` → `limit` (maximum input) is rounded **up** (ceil), so the
+  protected maximum input is never below the input the route actually requires.
+  This prevents exact-output phantom liquidity, where a quote looks fillable
+  but reverts because a truncated limit sat below the required input.
+
+## Route evidence and reconstruction
+
+Every source outcome carries non-empty evidence, and the response preserves the
+selected route and every rejected route. The selected route is reconstructable
+from its outcome: the normalized quote reports input/output/limit amounts, gas,
+fees, slippage limit, approval target, and expiry, and the evidence reports the
+source path. ZFi evidence encodes the chosen builder and its ordered legs (swap
+venue, fee, amounts); parallel split routes additionally report each leg's
+`proportionBps` share of the input (summing to 10,000). Set evidence records
+pool identity, inventory snapshot, and price decomposition. Aggregator evidence
+records the HTTP reference and block number.
+
 ## Terminology
 
 User-facing source metadata uses **Set**. Internal identifiers deliberately keep

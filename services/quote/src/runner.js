@@ -116,6 +116,7 @@ async function runOne(adapter, request, ctx) {
   };
 
   let outcome;
+  let transaction = null;
   try {
     if (ctx.signal?.aborted) {
       timing.cancelled = true;
@@ -133,7 +134,9 @@ async function runOne(adapter, request, ctx) {
           : "UNSUPPORTED_KIND";
       outcome = excludedOutcome(adapter, code, ctx.now());
     } else {
-      outcome = await quoteWithTimeout(adapter, request, ctx, timing);
+      const quoted = await quoteWithTimeout(adapter, request, ctx, timing);
+      outcome = quoted.outcome;
+      transaction = quoted.transaction;
     }
   } catch (error) {
     outcome = errorOutcome(adapter, error, ctx.now());
@@ -142,7 +145,7 @@ async function runOne(adapter, request, ctx) {
   timing.latencyMs = Math.round(performance.now() - start);
   timing.finishedAt = ctx.now();
   timing.status = outcome.status;
-  return { outcome, timing };
+  return { outcome, timing, transaction };
 }
 
 async function quoteWithTimeout(adapter, request, ctx, timing) {
@@ -166,25 +169,24 @@ async function quoteWithTimeout(adapter, request, ctx, timing) {
     const observedAt = ctx.now();
     if (ctx.signal?.aborted) {
       timing.cancelled = true;
-      return failedOutcome(
-        adapter,
-        "CANCELLED",
-        "quote request was cancelled",
-        observedAt,
-      );
+      return {
+        outcome: failedOutcome(adapter, "CANCELLED", "quote request was cancelled", observedAt),
+        transaction: null,
+      };
     }
     if (timeoutSignal?.aborted) {
       timing.timedOut = true;
-      return failedOutcome(
-        adapter,
-        "UPSTREAM_TIMEOUT",
-        `source exceeded ${timeoutMs}ms`,
-        observedAt,
-      );
+      return {
+        outcome: failedOutcome(adapter, "UPSTREAM_TIMEOUT", `source exceeded ${timeoutMs}ms`, observedAt),
+        transaction: null,
+      };
     }
-    return errorOutcome(adapter, error, observedAt);
+    return { outcome: errorOutcome(adapter, error, observedAt), transaction: null };
   }
-  return resultToOutcome(adapter, result, ctx.now());
+  return {
+    outcome: resultToOutcome(adapter, result, ctx.now()),
+    transaction: result?.transaction ?? null,
+  };
 }
 
 /**
@@ -196,7 +198,10 @@ async function quoteWithTimeout(adapter, request, ctx, timing) {
  * @param {string} [options.kind="indicative"]  Quote kind to request.
  * @param {AbortSignal} [options.signal]  Caller cancellation signal.
  * @param {() => string} [options.now]  Clock override for deterministic tests.
- * @returns {Promise<{sources: Array<object>, timings: Array<object>}>}
+ * @returns {Promise<{sources: Array<object>, timings: Array<object>, transactions: Record<string, object>}>}
+ *   `transactions` maps a source id to the executable transaction that source
+ *   produced (firm quotes only), so a response assembler can lift the selected
+ *   source's transaction without it appearing in the schema-shaped outcomes.
  */
 export async function runQuoteSources(adapters, request, options = {}) {
   const validated = validateQuoteRequest(request);
@@ -215,8 +220,13 @@ export async function runQuoteSources(adapters, request, options = {}) {
   const results = await Promise.all(
     list.map((adapter) => runOne(adapter, validated, ctx)),
   );
+  const transactions = {};
+  for (const { outcome, transaction } of results) {
+    if (transaction) transactions[outcome.source.id] = transaction;
+  }
   return {
     sources: results.map((r) => r.outcome),
     timings: results.map((r) => r.timing),
+    transactions,
   };
 }

@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "route": "setwise",
+    "source": "setwise",
+    "mode": "exact-output",
+    "description": "Set pool indicative route for an exact output; the limit is the ceiled maximum input the pool requires."
+  },
+  "request": {
+    "apiVersion": "v1",
+    "chainId": 8453,
+    "tokenIn": { "chainId": 8453, "address": "0x0000000000000000000000000000000000000011" },
+    "tokenOut": { "chainId": 8453, "address": "0x0000000000000000000000000000000000000022" },
+    "router": { "chainId": 8453, "address": "0x0000000000000000000000000000000000000033" },
+    "mode": "exact-output",
+    "amount": "2510000",
+    "recipient": { "chainId": 8453, "address": "0x0000000000000000000000000000000000000044" },
+    "funder": { "chainId": 8453, "address": "0x0000000000000000000000000000000000000055" },
+    "slippage": { "maxBps": 50 }
+  },
+  "response": {
+    "apiVersion": "v1",
+    "requestId": "req_route_setwise_exact_output",
+    "chainId": 8453,
+    "mode": "exact-output",
+    "kind": "indicative",
+    "selectedSourceId": "set-bstock-ai",
+    "sources": [
+      {
+        "source": { "id": "set-bstock-ai", "type": "setwise", "displayName": "Set", "poolId": "bstock-ai" },
+        "status": "available",
+        "quote": {
+          "kind": "indicative",
+          "amounts": { "input": "1005000", "output": "2510000", "limit": "1010025" },
+          "gas": { "estimatedUnits": "165000", "estimatedCost": "22000000000000" },
+          "fees": [],
+          "approvalTarget": null,
+          "expiresAt": null
+        },
+        "evidence": [
+          {
+            "kind": "http",
+            "observedAt": "2026-07-22T20:00:00.000Z",
+            "reference": "set:bstock-ai:indicative",
+            "code": "INCLUDED",
+            "message": "Set pool bstock-ai indicative quote included on chain 8453"
+          },
+          {
+            "kind": "policy",
+            "observedAt": "2026-07-22T20:00:00.000Z",
+            "reference": "pool:bstock-ai@8453",
+            "code": "POOL_IDENTITY",
+            "message": "poolAddress=0x5e7151DeF0a13C29CA4d3a16b13B6b4a4d6a3a29"
+          },
+          {
+            "kind": "policy",
+            "observedAt": "2026-07-22T20:00:00.000Z",
+            "reference": "price:bstock-ai",
+            "code": "PRICE_DECOMPOSITION",
+            "message": "{\"rate\":\"2.51\",\"spreadBps\":12}"
+          }
+        ]
+      }
+    ],
+    "transaction": null
+  }
+}
