@@ -58,6 +58,8 @@ contract SetwiseExecutionAdapter is NativeAccounting, SetwiseRouterAuthorization
     /// @notice The router's pause / per-chain / per-source kill-switch control.
     IRouterControl public immutable routerControl;
 
+    uint256 private _setwiseExecutionLock;
+
     /// @notice The deployment or call chain differs from the configured chain.
     error WrongChain(uint256 expected, uint256 actual);
     /// @notice A constructor argument was invalid (zero registry/control).
@@ -72,6 +74,11 @@ contract SetwiseExecutionAdapter is NativeAccounting, SetwiseRouterAuthorization
     error SetwiseApprovalFailed(address token, address spender, uint256 amount);
     /// @notice A low-level ERC-20 balanceOf query failed.
     error SetwiseBalanceQueryFailed(address token, address account);
+    /// @notice An input-token balance did not match its call-scoped snapshot.
+    ///         This rejects fee-on-transfer input and pools that under-consume.
+    error SetwiseInputBalanceMismatch(address token, uint256 expected, uint256 actual);
+    /// @notice A pool or token attempted to re-enter Set execution.
+    error ReentrantSetwiseExecution();
 
     /// @notice Complete execution metadata for one Set swap.
     event SetwiseSwapExecuted(
@@ -110,6 +117,13 @@ contract SetwiseExecutionAdapter is NativeAccounting, SetwiseRouterAuthorization
         _;
     }
 
+    modifier nonReentrantSetwiseExecution() {
+        if (_setwiseExecutionLock != 0) revert ReentrantSetwiseExecution();
+        _setwiseExecutionLock = 1;
+        _;
+        _setwiseExecutionLock = 0;
+    }
+
     /// @notice Fail-closed venue guards. Runs before the authorization check so
     ///         an unregistered pool address is never even static-called, and
     ///         long before any approval, transfer, or value forwarding.
@@ -138,6 +152,7 @@ contract SetwiseExecutionAdapter is NativeAccounting, SetwiseRouterAuthorization
         external
         payable
         onlyConfiguredChain
+        nonReentrantSetwiseExecution
         nativeFrame(!swap.nativeIn)
         onlyEnabledSetwisePool(swap)
         onlyValidSetwiseAuthorization(swap, funder, authorizationSignature)
@@ -170,9 +185,9 @@ contract SetwiseExecutionAdapter is NativeAccounting, SetwiseRouterAuthorization
         internal
         returns (uint256 amountOut)
     {
-        _safeTransferFrom(swap.assetIn, funder, address(this), swap.amountIn);
+        uint256 inputBalanceBefore = _pullExactInput(swap.assetIn, funder, swap.amountIn);
 
-        _safeApprove(swap.assetIn, address(pool), swap.amountIn);
+        _forceApprove(swap.assetIn, address(pool), swap.amountIn);
         uint256 recipientBefore = _balanceOf(swap.assetOut, swap.recipient);
         pool.swapExactAssetForAsset(
             swap.assetIn,
@@ -187,6 +202,7 @@ contract SetwiseExecutionAdapter is NativeAccounting, SetwiseRouterAuthorization
         );
         amountOut = _balanceOf(swap.assetOut, swap.recipient) - recipientBefore;
         _safeApprove(swap.assetIn, address(pool), 0);
+        _requireInputBalance(swap.assetIn, inputBalanceBefore);
 
         if (amountOut != swap.amountOut) revert SetwiseOutputMismatch(swap.amountOut, amountOut);
     }
@@ -227,9 +243,9 @@ contract SetwiseExecutionAdapter is NativeAccounting, SetwiseRouterAuthorization
         internal
         returns (uint256 amountOut)
     {
-        _safeTransferFrom(swap.assetIn, funder, address(this), swap.amountIn);
+        uint256 inputBalanceBefore = _pullExactInput(swap.assetIn, funder, swap.amountIn);
 
-        _safeApprove(swap.assetIn, address(pool), swap.amountIn);
+        _forceApprove(swap.assetIn, address(pool), swap.amountIn);
         uint256 recipientBefore = swap.recipient.balance;
         pool.swapExactAssetForNative(
             swap.assetIn,
@@ -242,25 +258,61 @@ contract SetwiseExecutionAdapter is NativeAccounting, SetwiseRouterAuthorization
             swap.auxiliaryData
         );
         _safeApprove(swap.assetIn, address(pool), 0);
+        _requireInputBalance(swap.assetIn, inputBalanceBefore);
         amountOut = swap.recipient.balance - recipientBefore;
 
         if (amountOut != swap.amountOut) revert SetwiseOutputMismatch(swap.amountOut, amountOut);
     }
 
+    function _pullExactInput(address token, address funder, uint256 amount) internal returns (uint256 balanceBefore) {
+        balanceBefore = _balanceOf(token, address(this));
+        _safeTransferFrom(token, funder, address(this), amount);
+        _requireInputBalance(token, balanceBefore + amount);
+    }
+
+    function _requireInputBalance(address token, uint256 expected) internal view {
+        uint256 actual = _balanceOf(token, address(this));
+        if (actual != expected) revert SetwiseInputBalanceMismatch(token, expected, actual);
+    }
+
     function _safeTransferFrom(address token, address from, address to, uint256 amount) internal {
         (bool ok, bytes memory result) =
             token.call(abi.encodeWithSignature("transferFrom(address,address,uint256)", from, to, amount));
-        if (!ok || (result.length != 0 && !abi.decode(result, (bool)))) {
+        if (!_optionalReturnSucceeded(ok, result)) {
             revert SetwiseTokenTransferFailed(token, from, to, amount);
         }
     }
 
-    function _safeApprove(address token, address spender, uint256 amount) internal {
-        (bool ok, bytes memory result) =
-            token.call(abi.encodeWithSignature("approve(address,uint256)", spender, amount));
-        if (!ok || (result.length != 0 && !abi.decode(result, (bool)))) {
+    /// @dev USDT-style force approval: try the exact allowance first, then
+    ///      reset a pre-existing allowance to zero before retrying.
+    function _forceApprove(address token, address spender, uint256 amount) internal {
+        if (_tryApprove(token, spender, amount)) return;
+        if (!_tryApprove(token, spender, 0) || !_tryApprove(token, spender, amount)) {
             revert SetwiseApprovalFailed(token, spender, amount);
         }
+    }
+
+    function _safeApprove(address token, address spender, uint256 amount) internal {
+        if (!_tryApprove(token, spender, amount)) {
+            revert SetwiseApprovalFailed(token, spender, amount);
+        }
+    }
+
+    function _tryApprove(address token, address spender, uint256 amount) internal returns (bool) {
+        (bool ok, bytes memory result) =
+            token.call(abi.encodeWithSignature("approve(address,uint256)", spender, amount));
+        return _optionalReturnSucceeded(ok, result);
+    }
+
+    function _optionalReturnSucceeded(bool ok, bytes memory result) internal pure returns (bool) {
+        if (!ok) return false;
+        if (result.length == 0) return true;
+        if (result.length < 32) return false;
+        uint256 returned;
+        assembly ("memory-safe") {
+            returned := mload(add(result, 0x20))
+        }
+        return returned == 1;
     }
 
     function _balanceOf(address token, address account) internal view returns (uint256) {
