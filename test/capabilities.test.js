@@ -31,6 +31,10 @@ const chains = loadRegistry();
 const SUPPORTED = [1, 56, 4663, 8453];
 const NON_ETHEREUM = SUPPORTED.filter((id) => id !== ETHEREUM_CHAIN_ID);
 const ETHEREUM_ONLY = KNOWN_CAPABILITIES.filter(isEthereumOnlyCapability);
+// Issue #11 ZFi extensions: preserved on Ethereum, gated elsewhere. Newer
+// capabilities (e.g. setwiseComposition, issue #17) ship disabled by design
+// and are asserted separately.
+const ZFI_EXTENSION_CAPABILITIES = ["lidoStaking", "nameNft", "zammLiquidity", "ownership"];
 
 function baseConfig() {
   return structuredClone(
@@ -104,9 +108,9 @@ test("capability definitions align with the baseline Ethereum-only function set"
 // Acceptance: preserve enabled Ethereum behavior
 // ---------------------------------------------------------------------------
 
-test("Ethereum keeps every capability enabled", () => {
+test("Ethereum keeps every ZFi extension capability enabled", () => {
   const config = getChainConfig(ETHEREUM_CHAIN_ID);
-  for (const capability of KNOWN_CAPABILITIES) {
+  for (const capability of ZFI_EXTENSION_CAPABILITIES) {
     assert.equal(config.capabilities[capability].enabled, true, `${capability} on Ethereum`);
   }
   const result = validateChainConfig(config, ETHEREUM_CHAIN_ID);
@@ -213,6 +217,58 @@ test("disabled capabilities surface no service wiring or deploy inputs", () => {
       }
     }
   }
+});
+
+// ---------------------------------------------------------------------------
+// Acceptance: mixed Set composite routes ship behind a disabled capability (#17)
+// ---------------------------------------------------------------------------
+
+test("setwiseComposition is disabled on every supported chain", () => {
+  assert.equal(CAPABILITY_DEFINITIONS.setwiseComposition.decision, "disabled");
+  assert.equal(CAPABILITY_DEFINITIONS.setwiseComposition.ethereumOnly, false);
+  for (const chainId of SUPPORTED) {
+    const config = getChainConfig(chainId);
+    assert.equal(
+      config.capabilities.setwiseComposition.enabled,
+      false,
+      `setwiseComposition on chain ${chainId}`,
+    );
+    const result = validateChainConfig(config, chainId);
+    assert.deepEqual(result.errors, [], `chain ${chainId} stays valid`);
+  }
+});
+
+test("disabled setwiseComposition surfaces no service wiring or deploy inputs", () => {
+  const service = generateServiceConfig(chains);
+  const deploy = generateDeployInputs(chains);
+  const app = generateAppConfig(chains);
+  for (const chainId of SUPPORTED) {
+    assert.ok(
+      !("setwiseComposition" in service.chains[chainId].capabilities),
+      `service config must omit setwiseComposition on chain ${chainId}`,
+    );
+    assert.ok(
+      !("setwiseComposition" in deploy.chains[chainId].capabilities),
+      `deploy inputs must omit setwiseComposition on chain ${chainId}`,
+    );
+    // The app still sees the explicit flag with its Set-facing display name.
+    const entry = app.chains[chainId].capabilities.setwiseComposition;
+    assert.equal(entry.enabled, false, `app flag on chain ${chainId}`);
+    assert.equal(entry.displayName, CAPABILITY_DISPLAY_NAMES.setwiseComposition);
+    assert.match(entry.displayName, /\bSet\b/);
+  }
+});
+
+test("rejects enabling setwiseComposition without the Set venue", () => {
+  const config = baseConfig();
+  config.capabilities.setwiseComposition.enabled = true;
+  const result = validateChainConfig(config, 1);
+  assert.equal(result.valid, false);
+  assert.ok(
+    result.errors.some((e) =>
+      /capabilities\.setwiseComposition requires venues\.setwise/.test(e)
+    ),
+  );
 });
 
 // ---------------------------------------------------------------------------

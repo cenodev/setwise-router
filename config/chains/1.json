@@ -83,6 +83,9 @@
     },
     "ownership": {
       "enabled": true
+    },
+    "setwiseComposition": {
+      "enabled": false
     }
   },
   "aggregators": {

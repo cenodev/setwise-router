@@ -71,8 +71,8 @@ refunds and permissionless sweeps:
   for the Safe/timelock wired up in issue #37) and moves an explicit amount; it
   is not permissionless.
 
-The general transient-credit composition system is tracked separately
-(issue #17); this layer handles native value only.
+The general transient-credit composition system (issue #17) builds on this
+layer; see [`TRANSIENT_CREDIT.md`](./TRANSIENT_CREDIT.md).
 
 ## Coverage
 

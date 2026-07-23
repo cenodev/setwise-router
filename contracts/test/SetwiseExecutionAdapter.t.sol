@@ -71,6 +71,8 @@ contract MockExecutionToken {
     bool public failApprovals;
     bool public requireZeroBeforeApprove;
     uint256 public transferFee;
+    address public callbackTarget;
+    bytes public callbackCall;
 
     function mint(address account, uint256 amount) external {
         balanceOf[account] += amount;
@@ -96,6 +98,13 @@ contract MockExecutionToken {
         allowance[owner][spender] = amount;
     }
 
+    /// @notice Emulate a token with a transfer hook: on `transfer`, call into
+    ///         `target` mid-transfer. Any revert bubbles with its original data.
+    function setCallback(address target, bytes calldata callData) external {
+        callbackTarget = target;
+        callbackCall = callData;
+    }
+
     function approve(address spender, uint256 amount) external returns (bool) {
         if (failApprovals) return false;
         if (requireZeroBeforeApprove && amount != 0 && allowance[msg.sender][spender] != 0) return false;
@@ -107,6 +116,7 @@ contract MockExecutionToken {
         if (failTransfers) return false;
         balanceOf[msg.sender] -= amount;
         balanceOf[to] += amount - transferFee;
+        _attemptCallback();
         return true;
     }
 
@@ -118,6 +128,17 @@ contract MockExecutionToken {
         balanceOf[from] -= amount;
         balanceOf[to] += amount - transferFee;
         return true;
+    }
+
+    function _attemptCallback() internal {
+        if (callbackTarget == address(0)) return;
+        (bool ok, bytes memory reason) = callbackTarget.call(callbackCall);
+        if (!ok) {
+            assembly ("memory-safe") {
+                revert(add(reason, 0x20), mload(reason))
+            }
+        }
+        revert("callback unexpectedly succeeded");
     }
 }
 
@@ -202,6 +223,7 @@ contract MockSetwiseExecutionPool {
 
     bool public tradingPaused;
     bool public underpayOutput;
+    bool public overpayOutput;
     bool public underpullInput;
     address public reentryTarget;
     bytes public reentryCall;
@@ -222,6 +244,10 @@ contract MockSetwiseExecutionPool {
 
     function setUnderpayOutput(bool value) external {
         underpayOutput = value;
+    }
+
+    function setOverpayOutput(bool value) external {
+        overpayOutput = value;
     }
 
     function setUnderpullInput(bool value) external {
@@ -283,7 +309,7 @@ contract MockSetwiseExecutionPool {
         _attemptReentry();
         uint256 pulled = underpullInput ? inputAmount - 1 : inputAmount;
         require(MockExecutionToken(inputAsset).transferFrom(msg.sender, address(this), pulled), "pool pull");
-        uint256 paid = underpayOutput ? outputAmount - 1 : outputAmount;
+        uint256 paid = _payout(outputAmount);
         require(MockExecutionToken(outputAsset).transfer(recipient, paid), "pool pay");
         emit ISetwisePool.SwapExecuted(inputAsset, outputAsset, recipient, inputAmount, paid, auxiliaryData);
     }
@@ -311,7 +337,7 @@ contract MockSetwiseExecutionPool {
         _attemptReentry();
         (bool ok,) = WRAPPED_NATIVE_TOKEN.call{value: inputAmount}("");
         require(ok, "wrap failed");
-        uint256 paid = underpayOutput ? outputAmount - 1 : outputAmount;
+        uint256 paid = _payout(outputAmount);
         require(MockExecutionToken(outputAsset).transfer(recipient, paid), "pool pay");
         emit ISetwisePool.SwapExecuted(WRAPPED_NATIVE_TOKEN, outputAsset, recipient, inputAmount, paid, auxiliaryData);
     }
@@ -338,11 +364,19 @@ contract MockSetwiseExecutionPool {
         _attemptReentry();
         uint256 pulled = underpullInput ? inputAmount - 1 : inputAmount;
         require(MockExecutionToken(inputAsset).transferFrom(msg.sender, address(this), pulled), "pool pull");
-        uint256 paid = underpayOutput ? outputAmount - 1 : outputAmount;
+        uint256 paid = _payout(outputAmount);
         IWrappedNativeToken(WRAPPED_NATIVE_TOKEN).withdraw(paid);
         (bool ok,) = recipient.call{value: paid}("");
         require(ok, "native transfer failed");
         emit ISetwisePool.SwapExecuted(inputAsset, WRAPPED_NATIVE_TOKEN, recipient, inputAmount, paid, auxiliaryData);
+    }
+
+    /// @dev The amount the pool actually pays: the signed output, or ±1 to
+    ///      emulate a pool whose delivered delta differs from the signed quote.
+    function _payout(uint256 outputAmount) internal view returns (uint256) {
+        if (underpayOutput) return outputAmount - 1;
+        if (overpayOutput) return outputAmount + 1;
+        return outputAmount;
     }
 
     function _verifyQuote(bytes32 quoteId, uint256 deadline) internal view {
@@ -878,18 +912,24 @@ contract SetwiseExecutionAdapterTest {
         require(!pool.usedQuoteIds(QUOTE_ID), "mismatch consumed quote");
     }
 
-    function testNativeToErc20RouterReceiptStagesOutput() external {
+    function testNativeToErc20RouterReceiptWithoutConsumerReverts() external {
         SetwiseSwap memory swap = _nativeInSwap(address(adapter));
         swap.signature = _poolQuote(swap);
         bytes memory authorization = _authorization(swap, FUNDER);
 
+        // Router receipt stages the measured output as transaction-scoped
+        // transient credit (issue #17); a standalone call never consumes it, so
+        // settlement reverts instead of leaving a residual router balance.
+        vm.expectRevert(
+            abi.encodeWithSelector(NativeAccounting.ResidualTokenCredit.selector, address(tokenOut), AMOUNT_OUT)
+        );
         vm.deal(FUNDER, AMOUNT_IN);
         vm.prank(FUNDER);
-        uint256 amountOut = adapter.swapSetwise{value: AMOUNT_IN}(swap, FUNDER, authorization);
+        adapter.swapSetwise{value: AMOUNT_IN}(swap, FUNDER, authorization);
 
-        require(amountOut == AMOUNT_OUT, "router receipt output");
-        require(tokenOut.balanceOf(address(adapter)) == AMOUNT_OUT, "router holds staged output");
+        require(tokenOut.balanceOf(address(adapter)) == 0, "router output residue");
         require(address(adapter).balance == 0, "router holds no native");
+        require(!pool.usedQuoteIds(QUOTE_ID), "quote consumed on revert");
     }
 
     // --- direction: erc20 -> native -------------------------------------------
@@ -1074,21 +1114,28 @@ contract SetwiseExecutionAdapterTest {
         adapter.swapSetwise(zeroOut, FUNDER, zeroOutAuthorization);
     }
 
-    // --- router receipt stages output for future composition -------------------
+    // --- router receipt stages transient credit for in-transaction composition ---
 
-    function testRouterReceiptStagesOutputForComposition() external {
+    function testRouterReceiptWithoutConsumerReverts() external {
         SetwiseSwap memory swap = _swap();
         swap.recipient = address(adapter);
         swap.signature = _poolQuote(swap);
         bytes memory authorization = _authorization(swap, FUNDER);
 
-        uint256 amountOut = _execute(swap, authorization);
+        // Router receipt stages the measured output as transaction-scoped
+        // transient credit (issue #17); it must be consumed by a later leg in
+        // the same transaction or settlement reverts atomically.
+        vm.expectRevert(
+            abi.encodeWithSelector(NativeAccounting.ResidualTokenCredit.selector, address(tokenOut), AMOUNT_OUT)
+        );
+        vm.prank(FUNDER);
+        adapter.swapSetwise(swap, FUNDER, authorization);
 
-        require(amountOut == AMOUNT_OUT, "router receipt output");
-        require(tokenOut.balanceOf(address(adapter)) == AMOUNT_OUT, "router holds staged output");
+        require(tokenOut.balanceOf(address(adapter)) == 0, "router output residue");
         require(tokenOut.balanceOf(FUNDER) == 0, "funder output balance");
         require(tokenIn.balanceOf(address(adapter)) == 0, "router input balance");
         require(tokenIn.allowance(address(adapter), address(pool)) == 0, "router pool allowance");
+        require(!pool.usedQuoteIds(QUOTE_ID), "quote consumed on revert");
     }
 
     function testMulticallSubCallSharesNativeFrame() external {

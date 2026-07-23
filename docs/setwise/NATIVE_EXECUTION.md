@@ -86,9 +86,13 @@ unwrap, not from the router, so the router ends with zero native balance.
   unconsumed). Such a recipient settles via a **wrapped-native route** instead —
   an ERC-20 → ERC-20 swap whose `assetOut` is the wrapped-native token, so the
   output arrives as an ERC-20 the recipient can hold.
-- **Router receipt** (`recipient = address(this)`): the measured output stays in
-  the router, staging it for a future composition leg (issue #17). The same
-  balance-delta enforcement applies.
+- **Router receipt** (`recipient = address(this)`): the measured output delta
+  is staged as transaction-scoped transient credit (issue #17) — native credit
+  for a native output, token credit otherwise — for a later leg in the same
+  transaction. The same balance-delta enforcement applies, and unconsumed
+  credit reverts the frame at settlement (`ResidualNativeCredit` /
+  `ResidualTokenCredit`). See
+  [`TRANSIENT_CREDIT.md`](./TRANSIENT_CREDIT.md).
 
 ## Security invariants
 
@@ -114,6 +118,7 @@ The native suite covers EOA recipients, accepting contract recipients, and
 rejecting contract recipients (revert plus the wrapped-native workaround);
 insufficient native value; surplus refund by per-call delta with a pre-funded
 router left untouched; output-delta mismatch in both native directions;
-router-receipt staging; wrong wrapped-native / sentinel asset reverts;
-native → native revert; attached-value rejection on the ERC-20 → native mode;
-and complete event metadata.
+router-receipt residual-credit reverts (see
+[`TRANSIENT_CREDIT.md`](./TRANSIENT_CREDIT.md)); wrong wrapped-native /
+sentinel asset reverts; native → native revert; attached-value rejection on
+the ERC-20 → native mode; and complete event metadata.
