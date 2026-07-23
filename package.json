@@ -33,8 +33,10 @@
     "verify:deployments:on-chain": "node scripts/verify-deployments.mjs --on-chain",
     "verify:deployments:checklist": "node scripts/verify-deployments.mjs --checklist",
     "check": "npm run lint && npm run typecheck && npm run format && npm run test && npm run test:services && npm run test:app && npm run build:config && npm run verify:deployments && npm run build:services && npm run check:bytecode && npm run test:contracts",
+    "differential:ethereum": "node scripts/check-ethereum-differential.mjs",
+    "differential:capture": "npm run baseline:routes && node scripts/capture-execution-fixtures.mjs --write && npm run differential:ethereum",
     "baseline:abi": "node scripts/build-abi-baseline.mjs && node scripts/build-abi-docs.mjs",
     "baseline:routes": "node scripts/build-route-fixtures.mjs",
-    "baseline:capture": "node scripts/capture-execution-fixtures.mjs"
+    "baseline:capture": "node scripts/capture-execution-fixtures.mjs --write"
   }
 }

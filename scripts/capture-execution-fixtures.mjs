@@ -35,6 +35,13 @@ function parseLines(stdout) {
 }
 
 function main() {
+  if (!process.argv.includes("--write")) {
+    console.error(
+      "Refusing to refresh the pinned fork fixture without --write. " +
+        "Run `npm run baseline:capture` for a deliberate refresh.",
+    );
+    process.exit(2);
+  }
   const forge = resolveForge();
   if (!forge) {
     console.error("forge not found. Install Foundry from https://getfoundry.sh/");
