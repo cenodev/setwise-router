@@ -2,7 +2,7 @@
  * Normalize Setwise RFQ indicative responses into the unified quote schema (issue #19).
  */
 
-import { resolveNativeAsset } from "../../../config/native.mjs";
+import { isNativeAsset, resolveNativeAsset } from "../../../config/native.mjs";
 import { slippageLimit } from "./rounding.js";
 
 /**
@@ -21,6 +21,14 @@ import { slippageLimit } from "./rounding.js";
  * @property {string} [observedAt]
  * @property {string} [message]
  * @property {string} [code]
+ */
+
+/**
+ * @typedef {SetwiseRfqIndicativeResponse & {
+ *   expiresAt: string,
+ *   approvalTarget?: string,
+ *   transaction: { chainId?: number, to: string, calldata?: string, data?: string, value?: string }
+ * }} SetwiseRfqFirmResponse
  */
 
 function applySlippageLimit(mode, amounts, maxBps) {
@@ -73,6 +81,84 @@ export function normalizeIndicativeQuote(request, rfq) {
   };
 }
 
+function sameAddress(left, right) {
+  return (
+    typeof left === "string" &&
+    typeof right === "string" &&
+    left.toLowerCase() === right.toLowerCase()
+  );
+}
+
+/**
+ * Normalize a short-lived Set firm quote. ERC-20 input is approved only to the
+ * requested router; native input never exposes an approval target.
+ *
+ * @param {object} request
+ * @param {SetwiseRfqFirmResponse} rfq
+ * @returns {object}
+ */
+export function normalizeFirmQuote(request, rfq) {
+  if (!rfq?.amounts || typeof rfq.expiresAt !== "string") {
+    throw new Error("Set firm quote requires amounts and expiresAt");
+  }
+  const nativeInput = isNativeAsset(request.tokenIn.address);
+  const approvalTarget = nativeInput
+    ? null
+    : rfq.approvalTarget ?? request.router.address;
+  if (!nativeInput && !sameAddress(approvalTarget, request.router.address)) {
+    const error = new Error("Set firm approval target does not match the requested router");
+    error.code = "APPROVAL_TARGET_MISMATCH";
+    throw error;
+  }
+
+  const amounts = applySlippageLimit(
+    request.mode,
+    rfq.amounts,
+    request.slippage.maxBps,
+  );
+  const exactSide = request.mode === "exact-input" ? "input" : "output";
+  amounts[exactSide] = request.amount;
+
+  return {
+    kind: "firm",
+    amounts,
+    gas: rfq.gas ?? { estimatedUnits: "0", estimatedCost: "0" },
+    fees: rfq.fees ?? [],
+    approvalTarget: nativeInput ? null : request.router,
+    expiresAt: rfq.expiresAt,
+  };
+}
+
+/**
+ * Normalize and bind the executable payload to the exact request router.
+ *
+ * @param {object} request
+ * @param {SetwiseRfqFirmResponse} rfq
+ * @returns {object}
+ */
+export function normalizeFirmTransaction(request, rfq) {
+  const transaction = rfq?.transaction;
+  if (!transaction || !sameAddress(transaction.to, request.router.address)) {
+    const error = new Error("Set firm transaction target does not match the requested router");
+    error.code = "ROUTER_MISMATCH";
+    throw error;
+  }
+  if (
+    transaction.chainId !== undefined &&
+    transaction.chainId !== request.chainId
+  ) {
+    const error = new Error("Set firm transaction chain does not match the request");
+    error.code = "CHAIN_MISMATCH";
+    throw error;
+  }
+  return {
+    chainId: request.chainId,
+    to: request.router.address,
+    calldata: transaction.calldata ?? transaction.data,
+    value: transaction.value ?? "0",
+  };
+}
+
 /**
  * Build structured evidence for a Set indicative quote attempt.
  *
@@ -83,6 +169,7 @@ export function normalizeIndicativeQuote(request, rfq) {
  * @param {string} [params.outcome] included | excluded | stale | paused | unavailable
  * @param {string} [params.code]
  * @param {string} [params.message]
+ * @param {"indicative"|"firm"} [params.kind]
  * @returns {Array<object>}
  */
 export function buildSetwiseEvidence({
@@ -92,16 +179,17 @@ export function buildSetwiseEvidence({
   outcome = "included",
   code,
   message,
+  kind = "indicative",
 }) {
   const evidence = [
     {
       kind: "http",
       observedAt,
-      reference: `set:${pool.poolId}:indicative`,
+      reference: `set:${pool.poolId}:${kind}`,
       code: code ?? outcome.toUpperCase(),
       message:
         message ??
-        `Set pool ${pool.poolId} indicative quote ${outcome} on chain ${pool.chainId}`,
+        `Set pool ${pool.poolId} ${kind} quote ${outcome} on chain ${pool.chainId}`,
     },
     {
       kind: "policy",

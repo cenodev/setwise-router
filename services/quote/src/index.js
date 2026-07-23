@@ -82,12 +82,25 @@ export {
   loadPoolCatalog,
 } from "./setwise-indicative-adapter.js";
 export {
+  DEFAULT_SET_FIRM_TTL_MS,
+  SetwiseFirmAdapter,
+  createAllSetwiseFirmAdapters,
+  createSetwiseFirmAdapter,
+  createSetwiseFirmAdapters,
+} from "./setwise-firm-adapter.js";
+export {
+  DEFAULT_WALLET_SUBMISSION_BUFFER_MS,
+  runSetwiseFirmSelection,
+} from "./setwise-firm-selection.js";
+export {
   MockSetwiseRfqClient,
   SetwiseRfqClient,
 } from "./setwise-rfq-client.js";
 export {
   buildSetwiseEvidence,
   isIndicativeQuoteStale,
+  normalizeFirmQuote,
+  normalizeFirmTransaction,
   normalizeIndicativeQuote,
   resolveRfqAssets,
 } from "./setwise-quote-normalize.js";

@@ -1,5 +1,5 @@
 /**
- * HTTP client for the external Setwise RFQ indicative pricing API (issue #19).
+ * HTTP client for the external Setwise RFQ pricing API (issues #19 and #23).
  *
  * The RFQ service remains outside this repository; the client isolates transport,
  * timeout, and response parsing so adapters and tests can inject a mock fetch.
@@ -7,6 +7,7 @@
 
 /**
  * @typedef {import("./setwise-quote-normalize.js").SetwiseRfqIndicativeResponse} SetwiseRfqIndicativeResponse
+ * @typedef {import("./setwise-quote-normalize.js").SetwiseRfqFirmResponse} SetwiseRfqFirmResponse
  */
 
 /**
@@ -19,6 +20,14 @@
  * @property {string} amount
  * @property {string} recipient
  * @property {string} funder
+ */
+
+/**
+ * @typedef {IndicativeQuoteRequest & {
+ *   router: string,
+ *   slippageBps: number,
+ *   ttlMs: number
+ * }} FirmQuoteRequest
  */
 
 export class SetwiseRfqClient {
@@ -43,6 +52,26 @@ export class SetwiseRfqClient {
    * @returns {Promise<SetwiseRfqIndicativeResponse>}
    */
   async requestIndicativeQuote(request, signal) {
+    return this.#request(
+      `/v1/pools/${encodeURIComponent(request.poolId)}/indicative`,
+      request,
+      signal,
+    );
+  }
+
+  /**
+   * Request a short-lived, executable quote only after the Set indicative
+   * quote has won the first comparison stage.
+   *
+   * @param {FirmQuoteRequest} request
+   * @param {AbortSignal} [signal]
+   * @returns {Promise<SetwiseRfqFirmResponse>}
+   */
+  async requestFirmQuote(request, signal) {
+    return this.#request("/v1/quotes/swaps", request, signal);
+  }
+
+  async #request(path, request, signal) {
     if (!this.baseUrl) {
       throw new Error("SETWISE_RFQ_API_URL is not configured");
     }
@@ -60,7 +89,7 @@ export class SetwiseRfqClient {
 
     try {
       const response = await this.fetchImpl(
-        `${this.baseUrl}/v1/pools/${encodeURIComponent(request.poolId)}/indicative`,
+        `${this.baseUrl}${path}`,
         {
           method: "POST",
           headers: { "content-type": "application/json", accept: "application/json" },
@@ -87,10 +116,20 @@ export class SetwiseRfqClient {
  */
 export class MockSetwiseRfqClient {
   /**
-   * @param {Record<string, SetwiseRfqIndicativeResponse | Error | ((request: IndicativeQuoteRequest) => SetwiseRfqIndicativeResponse | Error)>} responses
+   * A flat response map remains backward-compatible and is used for both quote
+   * kinds. New callers may pass `{ indicative: {...}, firm: {...} }`.
+   *
+   * @param {Record<string, unknown> | {indicative?: Record<string, unknown>, firm?: Record<string, unknown>}} responses
    */
   constructor(responses = {}) {
-    this.responses = responses;
+    const partitioned =
+      Object.hasOwn(responses, "indicative") || Object.hasOwn(responses, "firm");
+    this.responses = partitioned
+      ? {
+          indicative: responses.indicative ?? {},
+          firm: responses.firm ?? {},
+        }
+      : { indicative: responses, firm: responses };
   }
 
   /**
@@ -98,7 +137,20 @@ export class MockSetwiseRfqClient {
    * @returns {Promise<SetwiseRfqIndicativeResponse>}
    */
   async requestIndicativeQuote(request) {
-    const entry = this.responses[request.poolId] ?? this.responses["*"];
+    return this.#resolve("indicative", request);
+  }
+
+  /**
+   * @param {FirmQuoteRequest} request
+   * @returns {Promise<SetwiseRfqFirmResponse>}
+   */
+  async requestFirmQuote(request) {
+    return this.#resolve("firm", request);
+  }
+
+  async #resolve(kind, request) {
+    const responses = this.responses[kind];
+    const entry = responses[request.poolId] ?? responses["*"];
     if (!entry) {
       const error = new Error(`no mock RFQ response for pool ${request.poolId}`);
       error.code = "RFQ_NOT_CONFIGURED";
