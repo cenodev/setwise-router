@@ -48,6 +48,19 @@ test("native and wrapped-native assets match chain registry metadata", () => {
   assert.ok(list.some((token) => token.kind === "wrapped-native"));
 });
 
+test("BSC testnet exposes the verified faucet and Set asset addresses", () => {
+  const tokens = getTokensForChain(97);
+  assert.equal(tokens.length, 11);
+  assert.equal(
+    findToken(97, "0x0827541D8d43Bb891865440B50e6713D4C55be5A")?.symbol,
+    "mUSDT",
+  );
+  assert.equal(
+    findToken(97, "0x75D74Ab8EcFF5215bbad450103ceDF532C23Ae46")?.symbol,
+    "mbSPCX",
+  );
+});
+
 test("native assets label and resolve wrapped addresses for quotes", () => {
   const eth = getNativeAssets(1).native;
   assert.equal(formatTokenLabel(eth), "ETH");

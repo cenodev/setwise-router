@@ -33,7 +33,7 @@ import {
 } from "../deployments/verify.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const SUPPORTED = [1, 56, 4663, 8453];
+const SUPPORTED = [1, 56, 97, 4663, 8453];
 
 function baseManifest() {
   return structuredClone(
