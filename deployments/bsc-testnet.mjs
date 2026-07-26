@@ -53,6 +53,21 @@ export function evaluateBscTestnetRollout(
     isAddress(rollout.faucet?.address),
     "test asset faucet address is recorded",
   );
+  check(
+    "rfq",
+    typeof rollout.rfq?.baseUrl === "string" &&
+      /^https:\/\//.test(rollout.rfq.baseUrl) &&
+      typeof rollout.rfq?.poolId === "string" &&
+      rollout.rfq.poolId.length > 0,
+    "external Set RFQ pricing service and poolId are recorded",
+  );
+  check(
+    "architecture",
+    rollout.architecture?.pricing === "external-rfq" &&
+      rollout.architecture?.onchainQuoterRequired === false &&
+      rollout.architecture?.tokenHubRequired === false,
+    "chain 97 uses external RFQ pricing without fake on-chain quoter or token-hub roles",
+  );
 
   const assetAddresses = new Set();
   const assetIds = new Set();
@@ -73,17 +88,40 @@ export function evaluateBscTestnetRollout(
   }
   check("assets", assetsValid, "RFQ asset ids and token addresses are unique");
 
-  for (const role of [
-    "setwisePoolRegistry",
-    "setwiseRouter",
-    "setwiseQuoter",
-  ]) {
+  for (const role of ["setwisePoolRegistry", "setwiseRouter"]) {
     check(
       `deployment:${role}`,
       deployment.contracts?.[role]?.status === "deployed",
       `${deployment.contracts?.[role]?.displayName ?? role} is deployed`,
     );
   }
+  const routerControl = rollout.deployment?.routerControl;
+  check(
+    "deployment:routerControl",
+    routerControl?.status === "deployed" &&
+      isAddress(routerControl?.address) &&
+      isAddress(routerControl?.implementation) &&
+      TX_HASH_RE.test(routerControl?.transactionHash ?? "") &&
+      Number.isInteger(routerControl?.blockNumber) &&
+      routerControl.blockNumber >= 0,
+    "router control proxy deployment and confirmed transaction are recorded",
+  );
+  const governance = rollout.deployment?.governance;
+  check(
+    "governance:roles",
+    isAddress(governance?.deployer) &&
+      isAddress(governance?.owner) &&
+      isAddress(governance?.emergencyGuardian),
+    "deployer, governance owner, and emergency guardian are recorded",
+  );
+  check(
+    "governance:registry-owner",
+    governance?.registryOwnerAccepted === true &&
+      (governance?.registryOwnershipTransferRequired === false ||
+        (governance?.registryOwnershipTransferRequired === true &&
+          TX_HASH_RE.test(governance?.acceptanceTransactionHash ?? ""))),
+    "governance has accepted Set pool registry ownership when a transfer is required",
+  );
 
   const canaries = new Map(
     (rollout.canaries ?? []).map((canary) => [canary.mode, canary]),

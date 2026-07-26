@@ -34,9 +34,27 @@ npm run check:bsc-testnet
 ```
 
 `npm run check:bsc-testnet -- --require-ready` is the final fail-closed gate. It
-must remain red until the deployment manifest contains the real Set Router,
-registry, and quoter deployments; every required canary has a confirmed
-chain-97 transaction hash; and every safety check has evidence.
+must remain red until the deployment manifest contains the real Set Router and
+registry deployments, the rollout record contains router-control and governance
+evidence, every required canary has a confirmed chain-97 transaction hash, and
+every safety check has evidence.
+
+## Chain-97 architecture
+
+The executable on-chain path is:
+
+```
+SetwiseExecutionAdapter -> SetwisePoolRegistry -> existing Set proxy
+                        -> RouterControl
+```
+
+`SetwiseExecutionAdapter` is the internal `setwiseRouter` deployment role and
+the UI calls it **Set Router**. Set pricing is RFQ-based: indicative and firm
+quotes come from the recorded RFQ API, so chain 97 does not deploy a fake
+on-chain `setwiseQuoter`. The existing Set proxy owns its token inventory, so
+the router deployment also does not require a separate `setwiseTokenHub`. Those
+generic manifest roles remain pending for other chain architectures and are not
+chain-97 release requirements.
 
 Before broadcasting any deployment or canary:
 
@@ -49,24 +67,89 @@ Before broadcasting any deployment or canary:
 5. Use a dedicated, capped testnet deployer. Never place its key in the
    manifest, shell history, `.env.example`, PR, or CI logs.
 
-## Deployment order
+## Deployment credentials
+
+Use an encrypted Foundry keystore. Never put a private key in `.env`, a command
+argument, the manifest, or shell history.
+
+```sh
+cast wallet import setwise-bsc-testnet-deployer --interactive
+cast wallet address --account setwise-bsc-testnet-deployer
+```
+
+Set only public addresses and the RPC URL:
+
+```sh
+export RPC_URL_BSC_TESTNET=https://data-seed-prebsc-1-s1.bnbchain.org:8545
+export DEPLOYER_ADDRESS=<address printed by cast>
+export GOVERNANCE_ADDRESS=<approved testnet owner or Safe>
+export EMERGENCY_GUARDIAN_ADDRESS=<approved disable-only guardian>
+```
+
+The deployer must be funded with a capped amount of tBNB. If governance is a
+Safe, prepare its registry-ownership acceptance transaction before broadcast.
+
+## Deployment order and commands
 
 Broadcasts are an operator action and are deliberately not part of
 `npm run check`.
 
-1. Deploy and initialize the governed Set pool registry.
-2. Register the permanent Set proxy and confirm it is enabled.
-3. Deploy and initialize router control with the approved owner and guardian.
-4. Deploy the Set Router bound to chain `97`, mock wrapped BNB, the registry,
-   and router control.
-5. Deploy the required quoter components against the same chain-specific
-   addresses.
-6. Verify source and runtime bytecode, then replace only the corresponding
-   `pending` manifest entries with addresses, constructor inputs, compiler
-   metadata, transactions, blocks, bytecode hashes, and explorer links.
+The Foundry script performs these transactions in order:
+
+1. Deploy `SetwisePoolRegistry` implementation and ERC-1967 proxy.
+2. Initialize the registry to the deployer, register the permanent Set proxy,
+   and start the two-step transfer when governance differs from the deployer.
+3. Deploy `RouterControl` implementation and ERC-1967 proxy initialized to the
+   approved governance owner and guardian.
+4. Deploy `SetwiseExecutionAdapter` as the Set Router, immutably bound to chain
+   `97`, mock wrapped BNB, the registry, router control, and governance.
+
+Simulate first with the same keystore account:
+
+```sh
+npm run deploy:bsc-testnet:simulate -- \
+  --account setwise-bsc-testnet-deployer
+```
+
+Review the trace, derived addresses, signer balance, and chain ID. Broadcast
+only after that review:
+
+```sh
+npm run deploy:bsc-testnet -- \
+  --account setwise-bsc-testnet-deployer
+```
+
+The script writes public addresses to
+`contracts/broadcast/bsc-testnet-97.addresses.json`; Foundry writes confirmed
+transactions and receipts to
+`contracts/broadcast/DeployBscTestnet.s.sol/97/run-latest.json`.
+
+Preview the source-controlled records derived from those confirmed receipts:
+
+```sh
+npm run record:bsc-testnet
+```
+
+The recorder rechecks chain ID 97, reads deployed runtime code, and verifies
+both EIP-1967 implementation slots before producing actual on-chain bytecode
+hashes. After checking every address, transaction, and block on BscScan, write
+the candidate chain config, deployment manifest, and rollout record:
+
+```sh
+npm run record:bsc-testnet -- --write
+```
+
+Then:
+
+5. If the registry has a pending owner, have the governance address or Safe call
+   `acceptOwnership()` and record its confirmed transaction in the rollout
+   record.
+6. Run `npm run verify:deployments:on-chain` to verify code, bytecode hashes,
+   and the registry's EIP-1967 implementation slot.
 7. Configure the RFQ pool's `routerAddress` to the verified router. Confirm the
    RFQ service reads the router domain separator before enabling router-mode
    firm quotes.
+8. Execute and record the canary and negative matrices below.
 
 Do not enable the Set venue in `config/chains/97.json` until the manifest,
 on-chain verification, RFQ router binding, and canaries all agree.

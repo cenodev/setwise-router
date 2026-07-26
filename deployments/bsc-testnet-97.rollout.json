@@ -8,6 +8,41 @@
     "baseUrl": "https://setwise-rfq-api.datadex.workers.dev",
     "poolId": "bstock-ai-no-bnb-bsc-testnet"
   },
+  "architecture": {
+    "pricing": "external-rfq",
+    "onchainQuoterRequired": false,
+    "tokenHubRequired": false
+  },
+  "deployment": {
+    "poolRegistry": {
+      "status": "pending",
+      "address": null,
+      "implementation": null,
+      "transactionHash": null,
+      "blockNumber": null
+    },
+    "routerControl": {
+      "status": "pending",
+      "address": null,
+      "implementation": null,
+      "transactionHash": null,
+      "blockNumber": null
+    },
+    "setwiseRouter": {
+      "status": "pending",
+      "address": null,
+      "transactionHash": null,
+      "blockNumber": null
+    },
+    "governance": {
+      "deployer": null,
+      "owner": null,
+      "emergencyGuardian": null,
+      "registryOwnershipTransferRequired": null,
+      "registryOwnerAccepted": false,
+      "acceptanceTransactionHash": null
+    }
+  },
   "set": {
     "poolAddress": "0xA54D041eD831BBE2D6F97107Ab3aD9f9682C392a",
     "quoteSigner": "0x0B37DDA72EbC2E9Cd177D1455139e7355d3a9e50",
