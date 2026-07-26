@@ -7,6 +7,7 @@
  */
 
 import { QuoteSourceAdapter } from "./adapter.js";
+import { isNativeAsset } from "../../../config/native.mjs";
 import {
   discoverEligiblePools,
   getPoolById,
@@ -140,6 +141,8 @@ export class SetwiseFirmAdapter extends QuoteSourceAdapter {
           router: request.router.address,
           recipient: request.recipient.address,
           funder: request.funder.address,
+          inputNative: isNativeAsset(request.tokenIn.address),
+          outputNative: isNativeAsset(request.tokenOut.address),
           slippageBps: request.slippage.maxBps,
           ttlMs: this.firmTtlMs,
         },

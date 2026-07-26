@@ -27,6 +27,8 @@
 /**
  * @typedef {IndicativeQuoteRequest & {
  *   router: string,
+ *   inputNative?: boolean,
+ *   outputNative?: boolean,
  *   slippageBps: number,
  *   ttlMs: number
  * }} FirmQuoteRequest
@@ -79,14 +81,14 @@ export class SetwiseRfqClient {
         recipient: request.recipient,
         execution: "router",
         router: request.router,
-        inputNative: false,
-        outputNative: false,
+        inputNative: request.inputNative ?? false,
+        outputNative: request.outputNative ?? false,
       },
       signal,
       {
         "Idempotency-Key":
           request.idempotencyKey ??
-          `set-router:${request.poolId}:${request.funder}:${request.mode}:${request.amount}`,
+          `set-router:${globalThis.crypto.randomUUID()}`,
       },
     );
     return normalizeFirmRfqResponse(response, request);
