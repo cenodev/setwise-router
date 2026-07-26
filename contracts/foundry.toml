@@ -9,7 +9,10 @@ evm_version = "cancun"
 via_ir = true
 optimizer = true
 optimizer_runs = 200
-fs_permissions = [{ access = "read", path = "../baseline/setwise" }]
+fs_permissions = [
+    { access = "read", path = "../baseline/setwise" },
+    { access = "read-write", path = "./broadcast" },
+]
 
 [profile.default.fuzz]
 runs = 256
