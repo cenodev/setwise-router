@@ -2,6 +2,59 @@
   "schema": "setwise-router/setwise-pool-catalog@1",
   "pools": [
     {
+      "poolId": "bstock-ai-no-bnb-bsc-testnet",
+      "chainId": 97,
+      "poolAddress": "0xA54D041eD831BBE2D6F97107Ab3aD9f9682C392a",
+      "enabled": true,
+      "assets": [
+        {
+          "id": "USDT-BSC-TESTNET",
+          "address": "0x0827541D8d43Bb891865440B50e6713D4C55be5A",
+          "decimals": 18
+        },
+        {
+          "id": "SPCXB-BSC-TESTNET",
+          "address": "0x75D74Ab8EcFF5215bbad450103ceDF532C23Ae46",
+          "decimals": 18
+        },
+        {
+          "id": "SNDKB-BSC-TESTNET",
+          "address": "0xb106721f4f4D515c3528278DA64017cb6fc120F1",
+          "decimals": 18
+        },
+        {
+          "id": "PLTRB-BSC-TESTNET",
+          "address": "0x610B80d790D8895128b49d49026EC8FA9189559d",
+          "decimals": 18
+        },
+        {
+          "id": "QCOMB-BSC-TESTNET",
+          "address": "0xcA60A189a5Edb00549FFD05cF855AFEb7E42e366",
+          "decimals": 18
+        },
+        {
+          "id": "DRAMB-BSC-TESTNET",
+          "address": "0xcFd38Ce016Bf57997A238c67Eb591b9182307471",
+          "decimals": 18
+        },
+        {
+          "id": "GOOGLB-BSC-TESTNET",
+          "address": "0x90f0d4f7F58469ba56A09a679228873E71978264",
+          "decimals": 18
+        },
+        {
+          "id": "MUB-BSC-TESTNET",
+          "address": "0xaE9Bb4b368a9C5C6218Fae97327A5331a72596EA",
+          "decimals": 18
+        },
+        {
+          "id": "NVDAB-BSC-TESTNET",
+          "address": "0x4825Ce7b23d59A443BAD34864132971582782Fb2",
+          "decimals": 18
+        }
+      ]
+    },
+    {
       "poolId": "bstock-ai",
       "chainId": 8453,
       "poolAddress": "0x5e7151DeF0a13C29CA4d3a16b13B6b4a4d6a3a29",

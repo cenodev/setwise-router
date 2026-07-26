@@ -17,6 +17,8 @@
  * @property {string} mode
  * @property {string} tokenIn
  * @property {string} tokenOut
+ * @property {{ id: string, address: string, decimals: number }} [inputAsset]
+ * @property {{ id: string, address: string, decimals: number }} [outputAsset]
  * @property {string} amount
  * @property {string} recipient
  * @property {string} funder
@@ -52,11 +54,12 @@ export class SetwiseRfqClient {
    * @returns {Promise<SetwiseRfqIndicativeResponse>}
    */
   async requestIndicativeQuote(request, signal) {
-    return this.#request(
-      `/v1/pools/${encodeURIComponent(request.poolId)}/indicative`,
-      request,
+    const response = await this.#request(
+      "/v1/quotes/swaps",
+      swapRequestBody(request),
       signal,
     );
+    return normalizeIndicativeRfqResponse(response, request);
   }
 
   /**
@@ -68,10 +71,28 @@ export class SetwiseRfqClient {
    * @returns {Promise<SetwiseRfqFirmResponse>}
    */
   async requestFirmQuote(request, signal) {
-    return this.#request("/v1/quotes/swaps", request, signal);
+    const response = await this.#request(
+      "/v1/firm-quotes/swaps",
+      {
+        ...swapRequestBody(request),
+        payer: request.funder,
+        recipient: request.recipient,
+        execution: "router",
+        router: request.router,
+        inputNative: false,
+        outputNative: false,
+      },
+      signal,
+      {
+        "Idempotency-Key":
+          request.idempotencyKey ??
+          `set-router:${request.poolId}:${request.funder}:${request.mode}:${request.amount}`,
+      },
+    );
+    return normalizeFirmRfqResponse(response, request);
   }
 
-  async #request(path, request, signal) {
+  async #request(path, request, signal, headers = {}) {
     if (!this.baseUrl) {
       throw new Error("SETWISE_RFQ_API_URL is not configured");
     }
@@ -92,15 +113,23 @@ export class SetwiseRfqClient {
         `${this.baseUrl}${path}`,
         {
           method: "POST",
-          headers: { "content-type": "application/json", accept: "application/json" },
+          headers: {
+            "content-type": "application/json",
+            accept: "application/json",
+            ...headers,
+          },
           body: JSON.stringify(request),
           signal: controller.signal,
         },
       );
       const body = await response.json();
       if (!response.ok) {
-        const error = new Error(body?.message ?? `RFQ request failed (${response.status})`);
-        error.code = body?.code ?? "RFQ_HTTP_ERROR";
+        const error = new Error(
+          body?.error?.message ??
+            body?.message ??
+            `RFQ request failed (${response.status})`,
+        );
+        error.code = body?.error?.code ?? body?.code ?? "RFQ_HTTP_ERROR";
         throw error;
       }
       return body;
@@ -109,6 +138,128 @@ export class SetwiseRfqClient {
       signal?.removeEventListener("abort", abort);
     }
   }
+}
+
+function atomicToDecimal(amount, decimals) {
+  if (!/^(0|[1-9][0-9]*)$/.test(amount)) {
+    throw new Error("RFQ amount must be a canonical unsigned integer");
+  }
+  if (!Number.isInteger(decimals) || decimals <= 0) return amount;
+  const padded = amount.padStart(decimals + 1, "0");
+  const whole = padded.slice(0, -decimals);
+  const fraction = padded.slice(-decimals).replace(/0+$/, "");
+  return fraction ? `${whole}.${fraction}` : whole;
+}
+
+function swapRequestBody(request) {
+  const amountField =
+    request.mode === "exact-input" ? "inputAmount" : "outputAmount";
+  const exactAsset =
+    request.mode === "exact-input" ? request.inputAsset : request.outputAsset;
+  return {
+    poolId: request.poolId,
+    inputAsset: request.inputAsset?.id ?? request.tokenIn,
+    outputAsset: request.outputAsset?.id ?? request.tokenOut,
+    [amountField]: atomicToDecimal(request.amount, exactAsset?.decimals ?? 0),
+  };
+}
+
+function responseIdentity(response, request) {
+  return {
+    poolId: response.stateSnapshot?.poolId ?? response.poolId ?? request.poolId,
+    chainId: response.stateSnapshot?.chainId ?? response.chainId ?? request.chainId,
+    mode: response.intent ?? response.mode ?? request.mode,
+  };
+}
+
+/**
+ * Normalize the live Setwise RFQ API response while retaining support for the
+ * original adapter fixture shape.
+ */
+export function normalizeIndicativeRfqResponse(response, request) {
+  if (response?.amounts) return response;
+  const identity = responseIdentity(response, request);
+  const paused = response?.stateSnapshot?.tradingPaused === true;
+  return {
+    ...identity,
+    status: paused ? "paused" : "available",
+    ...(paused
+      ? { code: "TRADING_PAUSED", message: "Set trading is paused" }
+      : {}),
+    amounts: {
+      input: response.input?.atomicAmount,
+      output: response.output?.atomicAmount,
+    },
+    gas: {
+      estimatedUnits:
+        response.pricing?.venues?.find((venue) => venue.gasEstimate)?.gasEstimate ??
+        "0",
+      estimatedCost: "0",
+    },
+    fees: [],
+    inventory: {
+      observedAt: response.pricedAt,
+      blockNumber: response.stateSnapshot?.blockNumber,
+      blockHash: response.stateSnapshot?.blockHash,
+    },
+    price: {
+      economics: response.economics,
+      venues: response.pricing?.venues ?? [],
+    },
+    warnings: response.warnings ?? [],
+    observedAt: response.pricedAt,
+    validUntil: response.validUntil,
+  };
+}
+
+/** Normalize an executable router-mode firm response from the live RFQ API. */
+export function normalizeFirmRfqResponse(response, request) {
+  if (response?.amounts) return response;
+  const identity = responseIdentity(response, request);
+  const executable = response?.status === "executable";
+  const approval = response?.requirements?.approvals?.[0];
+  return {
+    ...identity,
+    status: executable ? "available" : "unavailable",
+    ...(!executable
+      ? {
+          code:
+            response?.status === "awaiting-signature"
+              ? "SIGNATURE_PENDING"
+              : "FIRM_QUOTE_UNAVAILABLE",
+          message:
+            response?.status === "awaiting-signature"
+              ? "Set firm quote is awaiting an operational signature"
+              : "Set firm quote is not executable",
+        }
+      : {}),
+    amounts: {
+      input: response.input?.atomicAmount,
+      output: response.output?.atomicAmount,
+    },
+    gas: { estimatedUnits: "0", estimatedCost: "0" },
+    fees: [],
+    approvalTarget: approval?.spender ?? request.router,
+    expiresAt: response.mustSubmitBy,
+    inventory: {
+      observedAt: response.createdAt,
+      blockNumber: response.stateSnapshot?.blockNumber,
+      blockHash: response.stateSnapshot?.blockHash,
+    },
+    warnings: (response.warnings ?? []).map((warning) =>
+      typeof warning === "string"
+        ? { code: "SET_WARNING", message: warning }
+        : warning,
+    ),
+    transaction: response.transaction
+      ? {
+          chainId: response.transaction.chainId,
+          to: response.transaction.to,
+          calldata: response.transaction.calldata ?? response.transaction.data,
+          value: response.transaction.value ?? "0",
+        }
+      : null,
+  };
 }
 
 /**

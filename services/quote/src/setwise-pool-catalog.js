@@ -22,6 +22,8 @@ const DEFAULT_CATALOG_PATH = join(packageRoot, "fixtures/setwise/pools.json");
  * @property {string} poolAddress   On-chain pool proxy address.
  * @property {boolean} enabled      Whether the pool accepts indicative quotes.
  * @property {readonly string[]} supportedAssets  Lower-case asset addresses.
+ * @property {Readonly<Record<string, { id: string, address: string, decimals: number }>>} assets
+ *   RFQ asset metadata keyed by lower-case on-chain address.
  */
 
 /**
@@ -32,7 +34,7 @@ export function normalizePoolRecord(entry) {
   if (!entry || typeof entry !== "object") {
     throw new Error("pool catalog entry must be an object");
   }
-  const { poolId, chainId, poolAddress, enabled, supportedAssets } = entry;
+  const { poolId, chainId, poolAddress, enabled } = entry;
   if (typeof poolId !== "string" || poolId.trim().length === 0) {
     throw new Error("pool catalog entry requires a non-empty poolId");
   }
@@ -45,6 +47,11 @@ export function normalizePoolRecord(entry) {
   if (typeof enabled !== "boolean") {
     throw new Error(`pool "${poolId}" requires an enabled boolean`);
   }
+  const configuredAssets = Array.isArray(entry.assets) ? entry.assets : [];
+  const supportedAssets =
+    configuredAssets.length > 0
+      ? configuredAssets.map((asset) => asset?.address)
+      : entry.supportedAssets;
   if (!Array.isArray(supportedAssets) || supportedAssets.length === 0) {
     throw new Error(`pool "${poolId}" requires a non-empty supportedAssets list`);
   }
@@ -53,6 +60,36 @@ export function normalizePoolRecord(entry) {
       throw new Error(`pool "${poolId}" has an invalid supported asset "${asset}"`);
     }
   }
+  const assets = {};
+  const assetIds = new Set();
+  for (const asset of configuredAssets) {
+    if (!asset || typeof asset !== "object") {
+      throw new Error(`pool "${poolId}" has an invalid RFQ asset`);
+    }
+    if (typeof asset.id !== "string" || asset.id.trim().length === 0) {
+      throw new Error(`pool "${poolId}" RFQ asset requires a non-empty id`);
+    }
+    if (!isAddress(asset.address)) {
+      throw new Error(`pool "${poolId}" RFQ asset "${asset.id}" has an invalid address`);
+    }
+    if (!Number.isInteger(asset.decimals) || asset.decimals < 0 || asset.decimals > 36) {
+      throw new Error(`pool "${poolId}" RFQ asset "${asset.id}" has invalid decimals`);
+    }
+    const address = asset.address.toLowerCase();
+    if (assets[address]) {
+      throw new Error(`pool "${poolId}" has duplicate RFQ asset address "${asset.address}"`);
+    }
+    if (assetIds.has(asset.id)) {
+      throw new Error(`pool "${poolId}" has duplicate RFQ asset id "${asset.id}"`);
+    }
+    assetIds.add(asset.id);
+    assets[address] = Object.freeze({
+      id: asset.id,
+      address: asset.address,
+      decimals: asset.decimals,
+    });
+  }
+
   return Object.freeze({
     poolId,
     chainId,
@@ -61,6 +98,7 @@ export function normalizePoolRecord(entry) {
     supportedAssets: Object.freeze(
       supportedAssets.map((asset) => asset.toLowerCase()),
     ),
+    assets: Object.freeze(assets),
   });
 }
 
@@ -190,4 +228,26 @@ export function validateSupportedAssets(pool, tokenIn, tokenOut) {
     };
   }
   return { supported: true };
+}
+
+/**
+ * Resolve on-chain addresses to the RFQ API's stable internal asset ids.
+ * Legacy catalog entries without asset metadata continue to use addresses.
+ *
+ * @param {SetwisePoolRecord} pool
+ * @param {string} tokenIn
+ * @param {string} tokenOut
+ */
+export function resolvePoolRfqAssets(pool, tokenIn, tokenOut) {
+  const input = pool.assets[tokenIn.toLowerCase()] ?? {
+    id: tokenIn,
+    address: tokenIn,
+    decimals: 0,
+  };
+  const output = pool.assets[tokenOut.toLowerCase()] ?? {
+    id: tokenOut,
+    address: tokenOut,
+    decimals: 0,
+  };
+  return { input, output };
 }
