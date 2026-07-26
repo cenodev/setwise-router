@@ -14,6 +14,7 @@ import {
   getPoolById,
   loadPoolCatalog,
   rejectSelfReferentialRoute,
+  resolvePoolRfqAssets,
   validatePoolIdentity,
   validateSupportedAssets,
 } from "./setwise-pool-catalog.js";
@@ -131,6 +132,11 @@ export class SetwiseIndicativeAdapter extends QuoteSourceAdapter {
 
     let rfq;
     try {
+      const rfqAssets = resolvePoolRfqAssets(
+        this.pool,
+        assets.tokenIn,
+        assets.tokenOut,
+      );
       rfq = await this.rfqClient.requestIndicativeQuote(
         {
           poolId: this.pool.poolId,
@@ -138,6 +144,8 @@ export class SetwiseIndicativeAdapter extends QuoteSourceAdapter {
           mode: request.mode,
           tokenIn: assets.tokenIn,
           tokenOut: assets.tokenOut,
+          inputAsset: rfqAssets.input,
+          outputAsset: rfqAssets.output,
           amount: request.amount,
           recipient: request.recipient.address,
           funder: request.funder.address,

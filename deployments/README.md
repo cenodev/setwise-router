@@ -75,6 +75,12 @@ Each manifest is deterministic (no timestamps) and validated by
 
 User-facing copy uses **Set**; internal identifiers keep `pool` / `poolId`.
 
+Roles are chain-architecture dependent. BSC testnet uses the external Set RFQ
+service for pricing and the existing Set proxy for inventory, so its release
+does not require on-chain `setwiseQuoter` or `setwiseTokenHub` deployments.
+Those generic roles remain explicit and pending rather than being populated
+with invented addresses.
+
 UUPS proxy entries must record the **proxy address** used by integrators and a
 nested **implementation** record with bytecode metadata. Proxy and implementation
 addresses must differ.
@@ -102,3 +108,22 @@ npm run verify:deployments:checklist
 
 Invalid chain or address configuration **fails closed** — verification exits
 non-zero and refuses RPC reads when `eth_chainId` does not match the manifest.
+
+## BSC testnet confirmed-broadcast records
+
+After `DeployBscTestnet.s.sol` broadcasts successfully, preview deterministic
+records built from Foundry's address output and confirmed receipts:
+
+```bash
+npm run record:bsc-testnet
+```
+
+The preview changes nothing. After checking its addresses, transaction hashes,
+blocks, and bytecode hashes against BscScan, use the explicit write mode:
+
+```bash
+npm run record:bsc-testnet -- --write
+```
+
+This updates chain 97 only. It does not enable the Set venue or manufacture
+canary evidence.

@@ -7,11 +7,13 @@
  */
 
 import { QuoteSourceAdapter } from "./adapter.js";
+import { isNativeAsset } from "../../../config/native.mjs";
 import {
   discoverEligiblePools,
   getPoolById,
   loadPoolCatalog,
   rejectSelfReferentialRoute,
+  resolvePoolRfqAssets,
   validatePoolIdentity,
   validateSupportedAssets,
 } from "./setwise-pool-catalog.js";
@@ -121,6 +123,11 @@ export class SetwiseFirmAdapter extends QuoteSourceAdapter {
 
     let rfq;
     try {
+      const rfqAssets = resolvePoolRfqAssets(
+        this.pool,
+        assets.tokenIn,
+        assets.tokenOut,
+      );
       rfq = await this.rfqClient.requestFirmQuote(
         {
           poolId: this.pool.poolId,
@@ -128,10 +135,14 @@ export class SetwiseFirmAdapter extends QuoteSourceAdapter {
           mode: request.mode,
           tokenIn: assets.tokenIn,
           tokenOut: assets.tokenOut,
+          inputAsset: rfqAssets.input,
+          outputAsset: rfqAssets.output,
           amount: request.amount,
           router: request.router.address,
           recipient: request.recipient.address,
           funder: request.funder.address,
+          inputNative: isNativeAsset(request.tokenIn.address),
+          outputNative: isNativeAsset(request.tokenOut.address),
           slippageBps: request.slippage.maxBps,
           ttlMs: this.firmTtlMs,
         },

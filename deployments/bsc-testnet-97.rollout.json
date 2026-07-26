@@ -1,0 +1,129 @@
+{
+  "schema": "setwise-router/bsc-testnet-rollout@1",
+  "chainId": 97,
+  "network": "bsc-testnet",
+  "explorerUrl": "https://testnet.bscscan.com",
+  "rpcEnv": "RPC_URL_BSC_TESTNET",
+  "rfq": {
+    "baseUrl": "https://setwise-rfq-api.datadex.workers.dev",
+    "poolId": "bstock-ai-no-bnb-bsc-testnet"
+  },
+  "architecture": {
+    "pricing": "external-rfq",
+    "onchainQuoterRequired": false,
+    "tokenHubRequired": false
+  },
+  "deployment": {
+    "poolRegistry": {
+      "status": "pending",
+      "address": null,
+      "implementation": null,
+      "transactionHash": null,
+      "blockNumber": null
+    },
+    "routerControl": {
+      "status": "pending",
+      "address": null,
+      "implementation": null,
+      "transactionHash": null,
+      "blockNumber": null
+    },
+    "setwiseRouter": {
+      "status": "pending",
+      "address": null,
+      "transactionHash": null,
+      "blockNumber": null
+    },
+    "governance": {
+      "deployer": null,
+      "owner": null,
+      "emergencyGuardian": null,
+      "registryOwnershipTransferRequired": null,
+      "registryOwnerAccepted": false,
+      "acceptanceTransactionHash": null
+    }
+  },
+  "set": {
+    "poolAddress": "0xA54D041eD831BBE2D6F97107Ab3aD9f9682C392a",
+    "quoteSigner": "0x0B37DDA72EbC2E9Cd177D1455139e7355d3a9e50",
+    "wrappedNativeToken": "0x119FF2a8b74dfCE4c378CE4bd2c10201bf47e395",
+    "verifiedBlock": "121438278",
+    "verifiedBlockHash": "0xd97eb641cf10e2fb98e4487627dd70716b554812a59f6f325b3e00b0909262ad"
+  },
+  "faucet": {
+    "address": "0x357B4Ba272421de4A0067EF2A830103Afa038F3C",
+    "cooldownSeconds": "86400",
+    "nativeTokenUrl": "https://docs.bnbchain.org/bnb-smart-chain/developers/faucet/"
+  },
+  "assets": [
+    {
+      "id": "USDT-BSC-TESTNET",
+      "address": "0x0827541D8d43Bb891865440B50e6713D4C55be5A",
+      "decimals": 18
+    },
+    {
+      "id": "SPCXB-BSC-TESTNET",
+      "address": "0x75D74Ab8EcFF5215bbad450103ceDF532C23Ae46",
+      "decimals": 18
+    },
+    {
+      "id": "SNDKB-BSC-TESTNET",
+      "address": "0xb106721f4f4D515c3528278DA64017cb6fc120F1",
+      "decimals": 18
+    },
+    {
+      "id": "PLTRB-BSC-TESTNET",
+      "address": "0x610B80d790D8895128b49d49026EC8FA9189559d",
+      "decimals": 18
+    },
+    {
+      "id": "QCOMB-BSC-TESTNET",
+      "address": "0xcA60A189a5Edb00549FFD05cF855AFEb7E42e366",
+      "decimals": 18
+    },
+    {
+      "id": "DRAMB-BSC-TESTNET",
+      "address": "0xcFd38Ce016Bf57997A238c67Eb591b9182307471",
+      "decimals": 18
+    },
+    {
+      "id": "GOOGLB-BSC-TESTNET",
+      "address": "0x90f0d4f7F58469ba56A09a679228873E71978264",
+      "decimals": 18
+    },
+    {
+      "id": "MUB-BSC-TESTNET",
+      "address": "0xaE9Bb4b368a9C5C6218Fae97327A5331a72596EA",
+      "decimals": 18
+    },
+    {
+      "id": "NVDAB-BSC-TESTNET",
+      "address": "0x4825Ce7b23d59A443BAD34864132971582782Fb2",
+      "decimals": 18
+    }
+  ],
+  "requiredCanaries": [
+    "erc20-to-erc20",
+    "native-to-erc20",
+    "erc20-to-native",
+    "competing-external-route"
+  ],
+  "canaries": [],
+  "requiredSafetyChecks": [
+    "wrong-chain",
+    "stale",
+    "replay",
+    "pause",
+    "zero-router-balances",
+    "zero-router-allowances",
+    "faucet-to-confirmed-swap"
+  ],
+  "safetyChecks": {},
+  "recovery": {
+    "pauseOwner": "Router governance",
+    "disableSet": "Disable the Set source in RouterControl, then disable the pool in the governed registry.",
+    "staleQuotes": "Stop firming, clear quote caches, verify RFQ and RPC block freshness, then request new quotes.",
+    "residualAssets": "Pause execution, preserve transaction evidence, revoke the exact pool allowance, and recover only through governance.",
+    "rollback": "Restore the previous verified manifest and RFQ pool configuration; never reuse a consumed quote id."
+  }
+}

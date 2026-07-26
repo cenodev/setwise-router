@@ -23,6 +23,11 @@ const EXPECTED = {
     wrapped: { symbol: "WBNB", address: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c" },
     verified: true,
   },
+  97: {
+    native: { symbol: "tBNB", decimals: 18 },
+    wrapped: { symbol: "mWBNB", address: "0x119FF2a8b74dfCE4c378CE4bd2c10201bf47e395" },
+    verified: true,
+  },
   8453: {
     native: { symbol: "ETH", decimals: 18 },
     wrapped: { symbol: "WETH", address: "0x4200000000000000000000000000000000000006" },
@@ -71,6 +76,8 @@ test("ETH/WETH on Ethereum, Base and Robinhood Chain; BNB/WBNB on BSC", () => {
   assert.equal(getNativeConfig(4663).wrapped.symbol, "WETH");
   assert.equal(getNativeConfig(56).wrapped.symbol, "WBNB");
   assert.equal(getNativeConfig(56).native.symbol, "BNB");
+  assert.equal(getNativeConfig(97).wrapped.symbol, "mWBNB");
+  assert.equal(getNativeConfig(97).native.symbol, "tBNB");
 });
 
 test("resolveNativeAsset maps the sentinel to the chain wrapped-native token", () => {
@@ -81,6 +88,10 @@ test("resolveNativeAsset maps the sentinel to the chain wrapped-native token", (
   assert.equal(
     resolveNativeAsset(56, NATIVE_TOKEN_SENTINEL).toLowerCase(),
     EXPECTED[56].wrapped.address.toLowerCase(),
+  );
+  assert.equal(
+    resolveNativeAsset(97, NATIVE_TOKEN_SENTINEL).toLowerCase(),
+    EXPECTED[97].wrapped.address.toLowerCase(),
   );
   assert.equal(
     resolveNativeAsset(8453, NATIVE_TOKEN_SENTINEL).toLowerCase(),

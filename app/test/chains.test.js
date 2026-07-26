@@ -12,7 +12,7 @@ import {
 
 const SUPPORTED = supportedChainIds();
 
-test("lists all four supported chains for selection", () => {
+test("lists all supported mainnet and testnet chains for selection", () => {
   assert.deepEqual(
     listSupportedChains().map((chain) => chain.chainId),
     SUPPORTED,
@@ -45,6 +45,15 @@ test("buildAddChainParams includes native currency and explorer", () => {
   assert.equal(params.nativeCurrency.symbol, "ETH");
   assert.ok(params.rpcUrls.length > 0);
   assert.ok(params.blockExplorerUrls.length > 0);
+});
+
+test("buildAddChainParams exposes the verified BSC testnet wallet metadata", () => {
+  const params = buildAddChainParams(97);
+  assert.equal(params.chainId, "0x61");
+  assert.equal(params.chainName, "BNB Smart Chain Testnet");
+  assert.equal(params.nativeCurrency.symbol, "tBNB");
+  assert.equal(params.rpcUrls[0], "https://data-seed-prebsc-1-s1.bnbchain.org:8545");
+  assert.equal(params.blockExplorerUrls[0], "https://testnet.bscscan.com");
 });
 
 test("buildAddChainParams falls back to public RPC for Robinhood Chain", () => {

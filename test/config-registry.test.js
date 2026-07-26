@@ -31,8 +31,8 @@ import {
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const chains = loadRegistry();
 
-const SUPPORTED = [1, 56, 4663, 8453];
-const VERIFIED = [1, 56, 8453];
+const SUPPORTED = [1, 56, 97, 4663, 8453];
+const VERIFIED = [1, 56, 97, 8453];
 
 function baseConfig() {
   return structuredClone(
@@ -52,7 +52,7 @@ function writeChainDir(configs) {
 // Acceptance: all four chains validate against the schema
 // ---------------------------------------------------------------------------
 
-test("all four supported chains load and validate", () => {
+test("all target chains and the BSC testnet integration chain load and validate", () => {
   assert.deepEqual(supportedChainIds(), SUPPORTED);
   for (const chainId of SUPPORTED) {
     const config = getChainConfig(chainId);
@@ -62,7 +62,7 @@ test("all four supported chains load and validate", () => {
   }
 });
 
-test("registry exposes exactly the four target chains", () => {
+test("registry exposes the four target chains and BSC testnet", () => {
   assert.equal(getAllChains().size, SUPPORTED.length);
   for (const chainId of SUPPORTED) assert.ok(isSupportedChain(chainId));
 });

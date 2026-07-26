@@ -1,0 +1,85 @@
+{
+  "chainId": 97,
+  "key": "bsc-testnet",
+  "displayName": "BNB Smart Chain Testnet",
+  "addressesVerified": true,
+  "nativeToken": {
+    "symbol": "tBNB",
+    "name": "Test BNB",
+    "decimals": 18
+  },
+  "wrappedNative": {
+    "symbol": "mWBNB",
+    "name": "Mock Wrapped BNB",
+    "decimals": 18,
+    "address": "0x119FF2a8b74dfCE4c378CE4bd2c10201bf47e395"
+  },
+  "rpc": {
+    "publicUrl": "https://data-seed-prebsc-1-s1.bnbchain.org:8545",
+    "primaryEnv": "RPC_URL_BSC_TESTNET",
+    "archiveEnv": "RPC_ARCHIVE_URL_BSC_TESTNET"
+  },
+  "multicall3": "0xcA11bde05977b3631167028862bE2a173976CA11",
+  "permit2": null,
+  "router": null,
+  "quoter": null,
+  "explorer": {
+    "name": "BscScan Testnet",
+    "baseUrl": "https://testnet.bscscan.com",
+    "txUrlTemplate": "https://testnet.bscscan.com/tx/{hash}",
+    "addressUrlTemplate": "https://testnet.bscscan.com/address/{address}"
+  },
+  "venues": {
+    "uniswapV2": {
+      "enabled": false
+    },
+    "uniswapV3": {
+      "enabled": false
+    },
+    "uniswapV4": {
+      "enabled": false
+    },
+    "sushiswap": {
+      "enabled": false
+    },
+    "pancakeSwap": {
+      "enabled": false
+    },
+    "curve": {
+      "enabled": false
+    },
+    "lido": {
+      "enabled": false
+    },
+    "zamm": {
+      "enabled": false
+    },
+    "setwise": {
+      "enabled": false,
+      "poolRegistry": null,
+      "tokenHub": null
+    }
+  },
+  "capabilities": {
+    "lidoStaking": {
+      "enabled": false
+    },
+    "nameNft": {
+      "enabled": false
+    },
+    "zammLiquidity": {
+      "enabled": false
+    },
+    "ownership": {
+      "enabled": true
+    },
+    "setwiseComposition": {
+      "enabled": false
+    }
+  },
+  "aggregators": {
+    "zeroEx": {
+      "enabled": false
+    }
+  }
+}

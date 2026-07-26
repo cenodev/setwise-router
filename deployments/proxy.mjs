@@ -45,7 +45,7 @@ export async function readEip1967Implementation(rpcUrl, proxyAddress, options = 
 export function classifyBytecode(code) {
   if (typeof code !== "string" || code === "0x" || code.length <= 2) return "empty";
   const normalized = code.toLowerCase();
-  if (normalized.includes("360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d938fcb")) {
+  if (normalized.includes("360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc")) {
     return "eip1967-proxy";
   }
   // ERC-1167 minimal proxy prefix

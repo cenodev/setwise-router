@@ -71,19 +71,55 @@ test("firm client uses the swaps endpoint and passes the router binding", async 
     mode: "exact-input",
     tokenIn: USDC,
     tokenOut: WETH,
+    inputAsset: { id: "USDC-BASE", address: USDC, decimals: 6 },
+    outputAsset: { id: "WETH-BASE", address: WETH, decimals: 18 },
     amount: "1000000",
     router: address("33"),
     recipient: address("44"),
     funder: address("55"),
+    inputNative: false,
+    outputNative: false,
     slippageBps: 50,
     ttlMs: 60_000,
   });
 
-  assert.equal(captured.url, "https://rfq.example/v1/quotes/swaps");
+  assert.equal(captured.url, "https://rfq.example/v1/firm-quotes/swaps");
   assert.equal(captured.init.method, "POST");
   assert.equal(captured.body.poolId, "bstock-ai");
+  assert.equal(captured.body.inputAsset, "USDC-BASE");
+  assert.equal(captured.body.outputAsset, "WETH-BASE");
+  assert.equal(captured.body.inputAmount, "1");
+  assert.equal(captured.body.execution, "router");
+  assert.equal(captured.body.payer, address("55"));
   assert.equal(captured.body.router, address("33"));
-  assert.equal(captured.body.ttlMs, 60_000);
+  assert.equal(captured.body.inputNative, false);
+  assert.equal(captured.body.outputNative, false);
+  assert.match(captured.init.headers["Idempotency-Key"], /^set-router:/);
+});
+
+test("Set firm adapter forwards native leg flags to the RFQ service", async () => {
+  let captured;
+  const rfqClient = {
+    async requestFirmQuote(rfqRequest) {
+      captured = rfqRequest;
+      return firm();
+    },
+  };
+  const set = adapter(firm(), { rfqClient });
+
+  await set.quote(
+    request({
+      tokenIn: scoped(8453, NATIVE_TOKEN_SENTINEL),
+    }),
+    {
+      kind: "firm",
+      now,
+      chainConfig: { chainId: 8453 },
+    },
+  );
+
+  assert.equal(captured.inputNative, true);
+  assert.equal(captured.outputNative, false);
 });
 
 test("Set firm adapter is executable only for firm requests", async () => {

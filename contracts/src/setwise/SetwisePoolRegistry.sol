@@ -11,7 +11,7 @@ import {ISetwisePoolRegistry} from "./ISetwisePoolRegistry.sol";
 ///      implementations are deliberately rejected: upgrades must retain the
 ///      registered proxy address.
 contract SetwisePoolRegistry is ISetwisePoolRegistry {
-    bytes32 internal constant IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d938fcb;
+    bytes32 internal constant IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
     address private immutable _self = address(this);
 

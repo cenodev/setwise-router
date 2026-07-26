@@ -4,6 +4,22 @@ Maintained fork program for the ZFi router stack with Setwise liquidity as a
 first-class venue. Same-chain deployments target Ethereum, BSC, Base, and
 Robinhood Chain.
 
+BSC testnet (`97`) is the first end-to-end staging environment. Its verified
+Set, token, faucet, RFQ, deployment, canary, and recovery procedure is recorded
+in [`docs/rollout/BSC_TESTNET.md`](./docs/rollout/BSC_TESTNET.md).
+
+The chain-97 Foundry workflow uses an encrypted keystore and never reads a
+private-key environment variable:
+
+```bash
+npm run deploy:bsc-testnet:simulate -- --account setwise-bsc-testnet-deployer
+npm run deploy:bsc-testnet -- --account setwise-bsc-testnet-deployer
+npm run record:bsc-testnet       # preview confirmed-broadcast records
+npm run record:bsc-testnet -- --write
+```
+
+The broadcast command is operator-only; CI and `npm run check` never invoke it.
+
 ## Upstream baseline
 
 The immutable ZFi snapshot lives in [`zFi-main/`](./zFi-main) as a git submodule
