@@ -14,7 +14,7 @@ export const MANIFEST_SCHEMA_VERSION = 1;
  * `bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1)`
  */
 export const EIP1967_IMPLEMENTATION_SLOT =
-  "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d938fcb";
+  "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
 
 /** `proxiableUUID()` — UUPS implementations expose this selector. */
 export const UUPS_PROXIABLE_UUID_SELECTOR = "0x52d1902d";

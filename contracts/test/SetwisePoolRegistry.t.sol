@@ -18,7 +18,7 @@ interface VmRegistry {
 }
 
 contract TestERC1967Proxy {
-    bytes32 internal constant IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d938fcb;
+    bytes32 internal constant IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
     constructor(address implementation, bytes memory initializationCall) {
         assembly ("memory-safe") {
@@ -55,7 +55,7 @@ contract TestERC1967Proxy {
 }
 
 contract MockSetwisePoolImplementation {
-    bytes32 internal constant IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d938fcb;
+    bytes32 internal constant IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
     address private immutable _self = address(this);
 
     function QUOTE_SIGNER() external pure returns (address) {

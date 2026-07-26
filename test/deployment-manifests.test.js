@@ -269,7 +269,7 @@ function ZERO_WORD() {
 test("classifyBytecode detects EIP-1967 proxy patterns", () => {
   const proxyCode =
     "0x608060405234801561001057600080fd5b50336000806101000a81548173" +
-    "360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d938fcb";
+    "360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
   assert.equal(classifyBytecode(proxyCode), "eip1967-proxy");
   assert.equal(classifyBytecode("0x"), "empty");
 });
@@ -283,7 +283,7 @@ test("bytecodeHasUupsInterface detects proxiableUUID selector", () => {
 test("EIP-1967 implementation slot constant is canonical", () => {
   assert.equal(
     EIP1967_IMPLEMENTATION_SLOT,
-    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d938fcb",
+    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
   );
 });
 
