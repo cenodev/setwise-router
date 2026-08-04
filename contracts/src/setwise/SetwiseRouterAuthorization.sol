@@ -172,7 +172,11 @@ abstract contract SetwiseRouterAuthorization {
         bytes calldata authorizationSignature
     ) internal view {
         _requireSetwiseAuthorizedCaller(funder);
-        if (block.timestamp > swap.deadline) revert SetwiseAuthorizationExpired(swap.deadline);
+        // Rebalancing Sets pack their balance guard into the high 224 bits and
+        // keep the actual Unix execution deadline in the low uint32. Plain
+        // deadlines remain compatible because their high bits are already zero.
+        uint256 executionDeadline = uint256(uint32(swap.deadline));
+        if (block.timestamp > executionDeadline) revert SetwiseAuthorizationExpired(executionDeadline);
 
         address signer = ISetwisePool(swap.pool).QUOTE_SIGNER();
         if (signer == address(0)) revert InvalidSetwiseQuoteSigner(signer);
