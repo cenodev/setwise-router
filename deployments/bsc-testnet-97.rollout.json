@@ -30,9 +30,9 @@
     },
     "setwiseRouter": {
       "status": "deployed",
-      "address": "0x972fF29324bF89da276960E66fa11a205c8B8650",
-      "transactionHash": "0xbf339b9d2083716bd5d7a91072337c5b55721d7d941224602a8f778bf86ec472",
-      "blockNumber": 123139022
+      "address": "0x00355Ed1Fc7cD618AEC5A8E8fD31686376499ccB",
+      "transactionHash": "0x034731c9eff0b481834317d6f0795535a290fa2321a60d24970cadc82c1aa360",
+      "blockNumber": 123171720
     },
     "governance": {
       "deployer": "0x0B37DDA72EbC2E9Cd177D1455139e7355d3a9e50",
@@ -108,7 +108,36 @@
     "erc20-to-native",
     "competing-external-route"
   ],
-  "canaries": [],
+  "canaries": [
+    {
+      "mode": "erc20-to-erc20",
+      "status": "confirmed",
+      "chainId": 97,
+      "transactionHash": "0x63f03abbedec68b55e8596148ab9bc27eae14a4b551abc70464ac0233aee1d51",
+      "evidence": "Faucet mUSDT was approved for the exact 10-token input; Set quote 0x69d70bca2379a41d70eba23b5668fdc0ba7417bda7dc6aadbc7e6878ce1bb049 settled SPCXB to the canary wallet and consumed both wallet and Set allowances."
+    },
+    {
+      "mode": "native-to-erc20",
+      "status": "confirmed",
+      "chainId": 97,
+      "transactionHash": "0xa7f808a353ed292dbd4b74be39335b1306cdb271644c8dae5c3af065f9a8515c",
+      "evidence": "The call attached exactly 0.002 tBNB with no token approval; Set quote 0x8d1b4696270b30c4e9d60ff52505e475ead2f448963defdb4bfd0cbd28704d3a settled mUSDT to the canary wallet with zero Router residue."
+    },
+    {
+      "mode": "erc20-to-native",
+      "status": "confirmed",
+      "chainId": 97,
+      "transactionHash": "0x49fe5ad84332bbe14c9c87149fc3b24a993b7708729e5df615cc18905f4c36ee",
+      "evidence": "Faucet mUSDT was approved for the exact 1-token input; Set quote 0x62113743e7fdf5a77bb04151ff4dc65af72c9fd5b3dca122ef0c98fccabd435b unwrapped and delivered 1682639672567415 wei to the canary wallet."
+    },
+    {
+      "mode": "competing-external-route",
+      "status": "confirmed",
+      "chainId": 97,
+      "transactionHash": "0x63f03abbedec68b55e8596148ab9bc27eae14a4b551abc70464ac0233aee1d51",
+      "evidence": "The firm quote included current Binance SPCXBUSDT liquidity and price-impact evidence. That venue is price evidence only on chain 97 and was rejected as non-executable; the executable Set route won the availability/gas gate and its selected calldata confirmed on chain."
+    }
+  ],
   "requiredSafetyChecks": [
     "wrong-chain",
     "stale",
@@ -118,7 +147,36 @@
     "zero-router-allowances",
     "faucet-to-confirmed-swap"
   ],
-  "safetyChecks": {},
+  "safetyChecks": {
+    "wrong-chain": {
+      "status": "passed",
+      "evidence": "Foundry tests testWrongChainRevertsBeforeAuthorization and testConstructorRejectsWrongChain passed, proving chain mismatch rejection before authorization or asset movement."
+    },
+    "stale": {
+      "status": "passed",
+      "evidence": "Set quote 0x041ad0e8e48cf5bc5f3bec7d05c376abe03eefc7accfae282d9d50c2371b34cc was simulated after its 10-second deadline and reverted with AuthorizationExpired selector 0xd5e019a0."
+    },
+    "replay": {
+      "status": "passed",
+      "evidence": "Immediate replay of confirmed native quote 0x8d1b4696270b30c4e9d60ff52505e475ead2f448963defdb4bfd0cbd28704d3a reverted with consumed-quote selector 0xe6b79916 and the same quote id."
+    },
+    "pause": {
+      "status": "passed",
+      "evidence": "RouterControl pause tx 0xb10a2ae8486f1f04a854e40b1aed7b5cb2df1e496aaab3624f775dc4d0bfd9fe confirmed; execution reverted with RouterAlreadyPaused selector 0xf5fffbaa; resume tx 0x489048804a7afd949025de23c773ce5280a54ac48d8f692cd671592fd95af8c2 confirmed and isPaused returned false."
+    },
+    "zero-router-balances": {
+      "status": "passed",
+      "evidence": "After all three confirmed canaries, Router 0x00355Ed1Fc7cD618AEC5A8E8fD31686376499ccB held zero native, mUSDT, SPCXB, and mWBNB balances."
+    },
+    "zero-router-allowances": {
+      "status": "passed",
+      "evidence": "After all three confirmed canaries, Router-to-Set mUSDT allowances were zero for both registered Sets and the canary wallet's Router allowance was zero."
+    },
+    "faucet-to-confirmed-swap": {
+      "status": "passed",
+      "evidence": "Fresh wallet 0x19F32BDdb30f40D41F1Fbe1BEB3C1b0CE5C55814 claimed faucet assets in tx 0xfbcb35f17e63c3075b4ef9a0a03d762f6abdf52bb4a505ace6e3f661fb476604 and completed ERC20-to-ERC20 swap tx 0x63f03abbedec68b55e8596148ab9bc27eae14a4b551abc70464ac0233aee1d51."
+    }
+  },
   "recovery": {
     "pauseOwner": "Router governance",
     "disableSet": "Disable the Set source in RouterControl, then disable the pool in the governed registry.",

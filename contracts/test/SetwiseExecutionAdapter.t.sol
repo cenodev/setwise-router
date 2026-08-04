@@ -1164,6 +1164,23 @@ contract SetwiseExecutionAdapterTest {
         require(tokenIn.balanceOf(FUNDER) == AMOUNT_IN * 10, "expired moved funds");
     }
 
+    function testPackedDeadlineUsesLowUint32ForAuthorizationExpiry() external {
+        uint256 executionDeadline = block.timestamp + 1 days;
+        SetwiseSwap memory swap = _swap();
+        swap.deadline = (uint256(100) << 160) | (uint256(90) << 64) | (uint256(5_000) << 48)
+            | (uint256(5_000) << 32) | executionDeadline;
+        swap.signature = _poolQuote(swap);
+        bytes memory authorization = _authorization(swap, FUNDER);
+
+        vm.warp(executionDeadline + 1);
+        vm.expectRevert(
+            abi.encodeWithSelector(SetwiseRouterAuthorization.SetwiseAuthorizationExpired.selector, executionDeadline)
+        );
+        vm.prank(FUNDER);
+        adapter.swapSetwise(swap, FUNDER, authorization);
+        require(tokenIn.balanceOf(FUNDER) == AMOUNT_IN * 10, "packed expired moved funds");
+    }
+
     function testModifiedInputAmountReverts() external {
         (SetwiseSwap memory swap, bytes memory authorization) = _fullySignedSwap();
         swap.amountIn += 1;
