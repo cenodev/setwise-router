@@ -12,8 +12,9 @@ import {
 } from "../deployments/constants.mjs";
 import {
   addressFromStorageWord,
-  classifyBytecode,
   bytecodeHasUupsInterface,
+  classifyBytecode,
+  inspectAddress,
 } from "../deployments/proxy.mjs";
 import {
   DeploymentManifestError,
@@ -266,12 +267,78 @@ function ZERO_WORD() {
   return `0x${"0".repeat(64)}`;
 }
 
-test("classifyBytecode detects EIP-1967 proxy patterns", () => {
+test("classifyBytecode detects EIP-1967 slot references", () => {
   const proxyCode =
     "0x608060405234801561001057600080fd5b50336000806101000a81548173" +
     "360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
-  assert.equal(classifyBytecode(proxyCode), "eip1967-proxy");
+  assert.equal(classifyBytecode(proxyCode), "eip1967-slot-reference");
   assert.equal(classifyBytecode("0x"), "empty");
+});
+
+test("inspectAddress does not mistake UUPS implementation code for a proxy", async () => {
+  const implementation = "0x2222222222222222222222222222222222222222";
+  const uupsCode =
+    "0x60806040" +
+    EIP1967_IMPLEMENTATION_SLOT.slice(2) +
+    "5b600052d1902d6000";
+  const fetchImpl = async (_url, init) => {
+    const request = JSON.parse(init.body);
+    const result =
+      request.method === "eth_getCode"
+        ? uupsCode
+        : request.method === "eth_getStorageAt"
+          ? ZERO_WORD()
+          : null;
+    return {
+      ok: true,
+      async json() {
+        return { jsonrpc: "2.0", id: request.id, result };
+      },
+    };
+  };
+
+  const inspection = await inspectAddress(
+    "https://rpc.example",
+    implementation,
+    { fetchImpl },
+  );
+
+  assert.equal(inspection.classification, "eip1967-slot-reference");
+  assert.equal(inspection.eip1967Implementation, null);
+  assert.equal(inspection.hasUupsInterface, true);
+  assert.equal(inspection.role, "implementation");
+});
+
+test("inspectAddress classifies a populated ERC-1967 slot as a proxy", async () => {
+  const implementation = "2222222222222222222222222222222222222222";
+  const proxyCode = `0x60806040${EIP1967_IMPLEMENTATION_SLOT.slice(2)}6000`;
+  const fetchImpl = async (_url, init) => {
+    const request = JSON.parse(init.body);
+    const result =
+      request.method === "eth_getCode"
+        ? proxyCode
+        : request.method === "eth_getStorageAt"
+          ? `0x${"0".repeat(24)}${implementation}`
+          : null;
+    return {
+      ok: true,
+      async json() {
+        return { jsonrpc: "2.0", id: request.id, result };
+      },
+    };
+  };
+
+  const inspection = await inspectAddress(
+    "https://rpc.example",
+    "0x1111111111111111111111111111111111111111",
+    { fetchImpl },
+  );
+
+  assert.equal(
+    inspection.eip1967Implementation,
+    `0x${implementation}`,
+  );
+  assert.equal(inspection.role, "proxy");
 });
 
 test("bytecodeHasUupsInterface detects proxiableUUID selector", () => {
