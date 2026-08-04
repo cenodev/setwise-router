@@ -261,6 +261,7 @@ export function buildBscTestnetDeploymentRecords(
 
   chain.router = addresses.setwiseRouter;
   chain.venues.setwise.poolRegistry = addresses.poolRegistryProxy;
+  chain.venues.setwise.enabled = false;
 
   rollout.architecture = {
     pricing: "external-rfq",

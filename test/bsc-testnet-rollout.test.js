@@ -29,13 +29,10 @@ test("records the verified BSC testnet Set, signer, wrapped BNB, faucet, and RFQ
   assert.equal(rollout.assets.length, 9);
 });
 
-test("current rollout remains fail-closed until canary and safety evidence is recorded", () => {
+test("current rollout is ready after confirmed canary and safety evidence", () => {
   const result = evaluateBscTestnetRollout();
-  assert.equal(result.ready, false);
-  assert.ok(!result.missing.some((item) => item.startsWith("deployment:")));
-  assert.ok(!result.missing.some((item) => item.startsWith("governance:")));
-  assert.ok(result.missing.includes("canary:erc20-to-erc20"));
-  assert.ok(result.missing.includes("safety:faucet-to-confirmed-swap"));
+  assert.equal(result.ready, true);
+  assert.deepEqual(result.missing, []);
 });
 
 test("readiness requires every asset mode, external competition, and safety check", () => {

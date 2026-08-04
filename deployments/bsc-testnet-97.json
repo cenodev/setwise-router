@@ -43,8 +43,8 @@
       "status": "deployed",
       "kind": "direct",
       "displayName": "Set Router",
-      "address": "0x972fF29324bF89da276960E66fa11a205c8B8650",
-      "bytecodeHash": "0xfef36065877bf35dda268ee5daf4fce3ce9b6fe282c291ba436d542fe71ba9f6",
+      "address": "0x00355Ed1Fc7cD618AEC5A8E8fD31686376499ccB",
+      "bytecodeHash": "0xb3439a0e7cc8e5bf253421e537d0de3b3ec4cad5ce3375624a2fa10f09b57e04",
       "compiler": {
         "profile": "default",
         "solcVersion": "0.8.28",
@@ -60,12 +60,12 @@
         "0xcf2Eb49530d045275678fFB54780e8EC905becE9"
       ],
       "deployment": {
-        "transactionHash": "0xbf339b9d2083716bd5d7a91072337c5b55721d7d941224602a8f778bf86ec472",
-        "blockNumber": 123139022
+        "transactionHash": "0x034731c9eff0b481834317d6f0795535a290fa2321a60d24970cadc82c1aa360",
+        "blockNumber": 123171720
       },
       "explorer": {
-        "addressUrl": "https://testnet.bscscan.com/address/0x972fF29324bF89da276960E66fa11a205c8B8650",
-        "transactionUrl": "https://testnet.bscscan.com/tx/0xbf339b9d2083716bd5d7a91072337c5b55721d7d941224602a8f778bf86ec472"
+        "addressUrl": "https://testnet.bscscan.com/address/0x00355Ed1Fc7cD618AEC5A8E8fD31686376499ccB",
+        "transactionUrl": "https://testnet.bscscan.com/tx/0x034731c9eff0b481834317d6f0795535a290fa2321a60d24970cadc82c1aa360"
       }
     },
     "setwiseQuoter": {
