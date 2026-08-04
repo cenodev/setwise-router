@@ -15,31 +15,31 @@
   },
   "deployment": {
     "poolRegistry": {
-      "status": "pending",
-      "address": null,
-      "implementation": null,
-      "transactionHash": null,
-      "blockNumber": null
+      "status": "deployed",
+      "address": "0xD4cCb7d1B9B6f464d5F80cD51c2a3e16395B8a49",
+      "implementation": "0xEf70E4Af817443f6c62bef5840CF4bdC886FFAa9",
+      "transactionHash": "0xec9d1921f2b126c46b4fb9787545d1239870163c790dbe1fdd231b84dc2495a1",
+      "blockNumber": 123138288
     },
     "routerControl": {
-      "status": "pending",
-      "address": null,
-      "implementation": null,
-      "transactionHash": null,
-      "blockNumber": null
+      "status": "deployed",
+      "address": "0xcf2Eb49530d045275678fFB54780e8EC905becE9",
+      "implementation": "0xC00Bbd7bf1B8bB4bE831F7cA47959b9DeC6a00C8",
+      "transactionHash": "0xeea0d0552bd262ea5991e682685bdec0864bc18f41ecd96437402eb49c5392f6",
+      "blockNumber": 123139013
     },
     "setwiseRouter": {
-      "status": "pending",
-      "address": null,
-      "transactionHash": null,
-      "blockNumber": null
+      "status": "deployed",
+      "address": "0x972fF29324bF89da276960E66fa11a205c8B8650",
+      "transactionHash": "0xbf339b9d2083716bd5d7a91072337c5b55721d7d941224602a8f778bf86ec472",
+      "blockNumber": 123139022
     },
     "governance": {
-      "deployer": null,
-      "owner": null,
-      "emergencyGuardian": null,
-      "registryOwnershipTransferRequired": null,
-      "registryOwnerAccepted": false,
+      "deployer": "0x0B37DDA72EbC2E9Cd177D1455139e7355d3a9e50",
+      "owner": "0x0B37DDA72EbC2E9Cd177D1455139e7355d3a9e50",
+      "emergencyGuardian": "0x0B37DDA72EbC2E9Cd177D1455139e7355d3a9e50",
+      "registryOwnershipTransferRequired": false,
+      "registryOwnerAccepted": true,
       "acceptanceTransactionHash": null
     }
   },
