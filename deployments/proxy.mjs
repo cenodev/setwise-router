@@ -37,16 +37,19 @@ export async function readEip1967Implementation(rpcUrl, proxyAddress, options = 
 }
 
 /**
- * Heuristic classification of an on-chain address.
+ * Heuristic classification of runtime bytecode. An ERC-1967 slot reference is
+ * only a hint: UUPS implementations contain the same constant in their upgrade
+ * logic, so callers must inspect the address's storage before assigning a
+ * proxy role.
  *
  * @param {string} code
- * @returns {"empty"|"eip1967-proxy"|"minimal-proxy"|"contract"}
+ * @returns {"empty"|"eip1967-slot-reference"|"minimal-proxy"|"contract"}
  */
 export function classifyBytecode(code) {
   if (typeof code !== "string" || code === "0x" || code.length <= 2) return "empty";
   const normalized = code.toLowerCase();
   if (normalized.includes("360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc")) {
-    return "eip1967-proxy";
+    return "eip1967-slot-reference";
   }
   // ERC-1167 minimal proxy prefix
   if (normalized.startsWith("0x363d3d373d3d3d363d73")) return "minimal-proxy";
@@ -102,7 +105,7 @@ export async function inspectAddress(rpcUrl, address, options = {}) {
 
   let role = "unknown";
   if (classification === "empty") role = "empty";
-  else if (eip1967Implementation || classification === "eip1967-proxy") role = "proxy";
+  else if (eip1967Implementation || classification === "minimal-proxy") role = "proxy";
   else if (hasUupsInterface) role = "implementation";
 
   return {

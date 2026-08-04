@@ -4,9 +4,35 @@
   "chainKey": "bsc-testnet",
   "contracts": {
     "setwisePoolRegistry": {
-      "status": "pending",
+      "status": "deployed",
       "kind": "uups-proxy",
-      "displayName": "Set pool registry"
+      "displayName": "Set pool registry",
+      "address": "0xD4cCb7d1B9B6f464d5F80cD51c2a3e16395B8a49",
+      "implementation": {
+        "kind": "implementation",
+        "address": "0xEf70E4Af817443f6c62bef5840CF4bdC886FFAa9",
+        "bytecodeHash": "0x991e1de936b5fc4a253a21e4f4867effd320f925ca89d240c4e4b0f561a97bd5",
+        "compiler": {
+          "profile": "default",
+          "solcVersion": "0.8.28",
+          "optimizer": true,
+          "optimizerRuns": 200,
+          "evmVersion": "cancun"
+        },
+        "constructorInputs": []
+      },
+      "constructorInputs": [
+        "0xEf70E4Af817443f6c62bef5840CF4bdC886FFAa9",
+        "initialize(0x0B37DDA72EbC2E9Cd177D1455139e7355d3a9e50,0x0B37DDA72EbC2E9Cd177D1455139e7355d3a9e50)"
+      ],
+      "deployment": {
+        "transactionHash": "0xec9d1921f2b126c46b4fb9787545d1239870163c790dbe1fdd231b84dc2495a1",
+        "blockNumber": 123138288
+      },
+      "explorer": {
+        "addressUrl": "https://testnet.bscscan.com/address/0xD4cCb7d1B9B6f464d5F80cD51c2a3e16395B8a49",
+        "transactionUrl": "https://testnet.bscscan.com/tx/0xec9d1921f2b126c46b4fb9787545d1239870163c790dbe1fdd231b84dc2495a1"
+      }
     },
     "setwiseTokenHub": {
       "status": "pending",
@@ -14,9 +40,33 @@
       "displayName": "Set token hub"
     },
     "setwiseRouter": {
-      "status": "pending",
+      "status": "deployed",
       "kind": "direct",
-      "displayName": "Set Router"
+      "displayName": "Set Router",
+      "address": "0x972fF29324bF89da276960E66fa11a205c8B8650",
+      "bytecodeHash": "0xfef36065877bf35dda268ee5daf4fce3ce9b6fe282c291ba436d542fe71ba9f6",
+      "compiler": {
+        "profile": "default",
+        "solcVersion": "0.8.28",
+        "optimizer": true,
+        "optimizerRuns": 200,
+        "evmVersion": "cancun"
+      },
+      "constructorInputs": [
+        "97",
+        "0x119FF2a8b74dfCE4c378CE4bd2c10201bf47e395",
+        "0x0B37DDA72EbC2E9Cd177D1455139e7355d3a9e50",
+        "0xD4cCb7d1B9B6f464d5F80cD51c2a3e16395B8a49",
+        "0xcf2Eb49530d045275678fFB54780e8EC905becE9"
+      ],
+      "deployment": {
+        "transactionHash": "0xbf339b9d2083716bd5d7a91072337c5b55721d7d941224602a8f778bf86ec472",
+        "blockNumber": 123139022
+      },
+      "explorer": {
+        "addressUrl": "https://testnet.bscscan.com/address/0x972fF29324bF89da276960E66fa11a205c8B8650",
+        "transactionUrl": "https://testnet.bscscan.com/tx/0xbf339b9d2083716bd5d7a91072337c5b55721d7d941224602a8f778bf86ec472"
+      }
     },
     "setwiseQuoter": {
       "status": "pending",
